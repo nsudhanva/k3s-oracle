@@ -119,7 +119,8 @@ spec:
     helm:
       valuesObject:
         deployment:
-          kind: DaemonSet
+          kind: Deployment
+          replicas: 1
         nodeSelector:
           role: ingress
         ports:
@@ -135,10 +136,6 @@ spec:
           kubernetesGateway:
             enabled: true
         hostNetwork: true
-        updateStrategy:
-          rollingUpdate:
-            maxUnavailable: 1
-            maxSurge: 0
         tolerations:
           - key: node-role.kubernetes.io/control-plane
             operator: Exists
