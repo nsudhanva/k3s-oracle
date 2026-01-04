@@ -136,6 +136,8 @@ spec:
           kubernetesGateway:
             enabled: true
         hostNetwork: true
+        service:
+          type: ClusterIP
         tolerations:
           - key: node-role.kubernetes.io/control-plane
             operator: Exists
