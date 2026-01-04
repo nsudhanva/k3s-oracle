@@ -70,7 +70,7 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: nginx-app
+  name: docs-app
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -79,10 +79,33 @@ spec:
   source:
     repoURL: ${git_repo_url}
     targetRevision: HEAD
-    path: argocd/apps/nginx
+    path: argocd/apps/docs
   destination:
     server: https://kubernetes.default.svc
     namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-ingress
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: ${git_repo_url}
+    targetRevision: HEAD
+    path: argocd/infrastructure/argocd-ingress
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
   syncPolicy:
     automated:
       prune: true
