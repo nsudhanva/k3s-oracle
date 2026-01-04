@@ -12,6 +12,8 @@ write_files:
 runcmd:
   # Enable forwarding
   - sysctl -p /etc/sysctl.d/99-nat.conf
+  - iptables -P FORWARD ACCEPT
+  - iptables -F FORWARD
   
   # Setup NAT
   - DEFAULT_IFACE=$(ip route get 8.8.8.8 | awk '{print $5; exit}')
