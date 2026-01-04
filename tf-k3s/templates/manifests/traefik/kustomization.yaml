@@ -1,0 +1,34 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+helmCharts:
+  - name: traefik
+    repo: https://traefik.github.io/charts
+    version: 23.1.0
+    releaseName: traefik
+    namespace: kube-system
+    valuesInline:
+      # Run as DaemonSet or Deployment? DaemonSet on ingress nodes is safest for hostPort.
+      deployment:
+        kind: DaemonSet
+      # Only run on nodes with role=ingress
+      nodeSelector:
+        role: ingress
+      # Bind to host ports 80/443 for direct access (Option A)
+      ports:
+        web:
+          port: 80
+          hostPort: 80
+          expose: true
+        websecure:
+          port: 443
+          hostPort: 443
+          expose: true
+      providers:
+        kubernetesGateway:
+          enabled: true
+      # Ensure it trusts the forwarded headers if needed (though hostNetwork bypasses LB)
+      # No, hostNetwork means it sees the real Source IP if direct.
+      # If behind Cloudflare Proxy, we need to trust Cloudflare IPs.
+      # But basic setup first.
+      hostNetwork: true

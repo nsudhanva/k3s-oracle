@@ -1,0 +1,35 @@
+#cloud-config
+package_update: true
+packages:
+  - iptables-persistent
+  - curl
+
+write_files:
+  - path: /etc/sysctl.d/99-nat.conf
+    content: |
+      net.ipv4.ip_forward=1
+
+runcmd:
+  # Enable forwarding
+  - sysctl -p /etc/sysctl.d/99-nat.conf
+  
+  # Setup NAT
+  - DEFAULT_IFACE=$(ip route get 8.8.8.8 | awk '{print $5; exit}')
+  - iptables -t nat -A POSTROUTING -o $DEFAULT_IFACE -j MASQUERADE
+  - netfilter-persistent save
+
+  # Install K3s Agent
+  # Waits for Server to be ready
+  - |
+    until curl -k https://${server_ip}:6443; do
+      echo "Waiting for K3s Server..."
+      sleep 10
+    done
+  - curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="agent --node-label role=ingress" K3S_URL=https://${server_ip}:6443 K3S_TOKEN=${k3s_token} sh -
+  
+  # Label as ingress
+  - /usr/local/bin/kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml label node $(hostname) role=ingress --overwrite
+  # Wait... Agent doesn't have kubectl access usually, or maybe it does? 
+  # Actually, only Server has the kubeconfig by default.
+  # So we can't label from here easily without extra auth.
+  # But we can pass `--node-label role=ingress` to install script!

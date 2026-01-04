@@ -1,0 +1,94 @@
+#cloud-config
+package_update: true
+packages:
+  - curl
+
+write_files:
+  # Argo CD Helm Chart
+  - path: /var/lib/rancher/k3s/server/manifests/argocd.yaml
+    owner: root:root
+    permissions: '0644'
+    content: |
+      apiVersion: helm.cattle.io/v1
+      kind: HelmChart
+      metadata:
+        name: argocd
+        namespace: kube-system
+      spec:
+        chart: argo-cd
+        repo: https://argoproj.github.io/argo-helm
+        targetNamespace: argocd
+        createNamespace: true
+        set:
+          server.service.type: ClusterIP
+          # We don't expose Argo UI via LoadBalancer, we will use Gateway API or Port Forwarding later.
+          # Or user can add Ingress in their repo.
+
+  # Root App (App of Apps)
+  - path: /var/lib/rancher/k3s/server/manifests/root-app.yaml
+    owner: root:root
+    permissions: '0644'
+    content: |
+      apiVersion: argoproj.io/v1alpha1
+      kind: Application
+      metadata:
+        name: root-app
+        namespace: argocd
+        finalizers:
+          - resources-finalizer.argocd.argoproj.io
+      spec:
+        project: default
+        source:
+          repoURL: ${git_repo_url}
+          targetRevision: HEAD
+          path: argocd
+        destination:
+          server: https://kubernetes.default.svc
+          namespace: default
+        syncPolicy:
+          automated:
+            prune: true
+            selfHeal: true
+          syncOptions:
+            - CreateNamespace=true
+
+  # Cloudflare API Token Secret (for Cert Manager/External DNS)
+  - path: /var/lib/rancher/k3s/server/manifests/cloudflare-secret.yaml
+    owner: root:root
+    permissions: '0600'
+    content: |
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: cert-manager
+      ---
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: cloudflare-api-token-secret
+        namespace: cert-manager
+      type: Opaque
+      stringData:
+        api-token: ${cloudflare_api_token}
+      ---
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: external-dns
+      ---
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: cloudflare-api-token-secret
+        namespace: external-dns
+      type: Opaque
+      stringData:
+        api-token: ${cloudflare_api_token}
+
+runcmd:
+  # Install K3s Server
+  # Disable built-in traefik because we want to manage it via GitOps or Gateway API explicitly?
+  # Prompt says "Install a Gateway API implementation ... Traefik Gateway API support".
+  # K3s includes Traefik. Enabling Gateway API in K3s Traefik requires config.
+  # Simplest: Disable default Traefik and let Argo CD install the configured Gateway implementation.
+  - curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --disable traefik --tls-san ${public_ip}" K3S_TOKEN=${k3s_token} sh -
