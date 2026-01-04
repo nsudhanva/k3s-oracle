@@ -70,7 +70,7 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: nginx-app
+  name: docs-app
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -79,7 +79,7 @@ spec:
   source:
     repoURL: https://github.com/nsudhanva/k3s-oracle.git
     targetRevision: HEAD
-    path: argocd/apps/nginx
+    path: argocd/apps/docs
   destination:
     server: https://kubernetes.default.svc
     namespace: default

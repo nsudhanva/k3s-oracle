@@ -1,20 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nginx
+  name: docs
   namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: nginx
+      app: docs
   template:
     metadata:
       labels:
-        app: nginx
+        app: docs
     spec:
       containers:
-      - name: nginx
-        image: nginx:alpine
+      - name: docs
+        image: ghcr.io/nsudhanva/k3s-oracle/docs:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 80

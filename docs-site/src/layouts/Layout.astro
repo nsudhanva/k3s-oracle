@@ -1,0 +1,29 @@
+---
+interface Props {
+	title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="description" content="K3s Oracle Documentation" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+        <style>
+            body { font-family: system-ui, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 2rem; background: #f4f4f4; color: #333; }
+            h1 { color: #d00; }
+            h2 { border-bottom: 2px solid #ddd; padding-bottom: 0.5rem; margin-top: 2rem; }
+            code { background: #eee; padding: 0.2rem 0.4rem; border-radius: 4px; }
+            pre { background: #222; color: #fff; padding: 1rem; overflow-x: auto; border-radius: 8px; }
+        </style>
+	</head>
+	<body>
+		<slot />
+	</body>
+</html>

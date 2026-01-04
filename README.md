@@ -72,7 +72,11 @@ git clone https://github.com/your-user/your-repo.git my-repo
 cd my-repo
 
 # Copy the generated manifests
-cp -r ../gitops-repo/* .
+1. Copy the generated files from 'argocd/' to your Git repository: ${var.git_repo_url}
+2. Push the changes to the repository.
+3. Wait for the instances to provision and K3s to install.
+4. Verify Argo CD status:
+   ssh -J ubuntu@${oci_core_instance.ingress.public_ip} ubuntu@10.0.2.10 "sudo kubectl get applications -n argocd"
 
 # Commit and Push
 git add .
