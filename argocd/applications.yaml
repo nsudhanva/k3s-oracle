@@ -1,10 +1,58 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
+  name: gateway-api-crds
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/kubernetes-sigs/gateway-api.git
+    targetRevision: v1.0.0
+    path: config/crd/standard
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
   name: cert-manager
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://charts.jetstack.io
+    chart: cert-manager
+    targetRevision: v1.12.0
+    helm:
+      valuesObject:
+        installCRDs: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager-issuer
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
   source:
@@ -31,9 +79,20 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/nsudhanva/k3s-oracle.git
-    targetRevision: HEAD
-    path: argocd/infrastructure/external-dns
+    repoURL: https://kubernetes-sigs.github.io/external-dns/
+    chart: external-dns
+    targetRevision: 1.13.0
+    helm:
+      valuesObject:
+        provider: cloudflare
+        env:
+          - name: CF_API_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: cloudflare-api-token-secret
+                key: api-token
+        domainFilters:
+          - sudhanva.me
   destination:
     server: https://kubernetes.default.svc
     namespace: external-dns
@@ -54,9 +113,32 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/nsudhanva/k3s-oracle.git
-    targetRevision: HEAD
-    path: argocd/infrastructure/traefik
+    repoURL: https://traefik.github.io/charts
+    chart: traefik
+    targetRevision: 23.1.0
+    helm:
+      valuesObject:
+        deployment:
+          kind: DaemonSet
+        nodeSelector:
+          role: ingress
+        ports:
+          web:
+            port: 80
+            hostPort: 80
+            expose: true
+          websecure:
+            port: 443
+            hostPort: 443
+            expose: true
+        providers:
+          kubernetesGateway:
+            enabled: true
+        hostNetwork: true
+        tolerations:
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+            effect: NoSchedule
   destination:
     server: https://kubernetes.default.svc
     namespace: kube-system
