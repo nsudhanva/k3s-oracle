@@ -3,50 +3,82 @@ layout: ../layouts/Layout.astro
 title: K3s on Oracle Cloud Always Free
 ---
 
-# Project Documentation
+# K3s on OCI Always Free (The "Robust" Edition)
+
+This project automates the deployment of a High Availability-ready Kubernetes cluster on Oracle Cloud Infrastructure's **Always Free** tier, solving specific challenges related to networking, ARM architecture, and GitOps bootstrapping.
 
 ## Architecture
 
-This cluster runs on **Oracle Cloud Infrastructure (OCI)** using **Always Free** resources.
+### Compute (Ampere A1 Flex)
+We utilize the generous Always Free ARM tier (4 OCPU, 24GB RAM total).
+*   **Ingress Node** (`k3s-ingress`): 1 OCPU, 6GB RAM.
+    *   **Role**: Entrypoint, NAT Gateway, Load Balancer.
+    *   **Network**: Public Subnet (`10.0.1.0/24`). Has a Public IP.
+*   **Server Node** (`k3s-server`): 2 OCPU, 12GB RAM.
+    *   **Role**: Control Plane, Argo CD, System Services.
+    *   **Network**: Private Subnet (`10.0.2.0/24`). No Public IP.
+*   **Worker Node** (`k3s-worker`): 1 OCPU, 6GB RAM.
+    *   **Role**: Workloads.
+    *   **Network**: Private Subnet (`10.0.2.0/24`). No Public IP.
 
-### Hardware (Ampere A1 Flex)
-*   **Ingress Node**: 1 OCPU, 6GB RAM (Public Subnet)
-*   **Server Node**: 2 OCPU, 12GB RAM (Private Subnet)
-*   **Worker Node**: 1 OCPU, 6GB RAM (Private Subnet)
+### Networking & NAT (The "Missing Link")
+OCI's Always Free tier excludes Managed NAT Gateways. To allow private nodes to access the internet (required for installing K3s, pulling images), we turned the **Ingress Node** into a software Router/NAT.
 
-### Networking
-*   **VCN**: `10.0.0.0/16`
-*   **Public Subnet**: `10.0.1.0/24` (Contains Ingress Node)
-*   **Private Subnet**: `10.0.2.0/24` (Contains Server & Worker)
-*   **NAT**: The Ingress Node acts as a software NAT Gateway for the private nodes using `iptables`.
+**Configuration applied via `cloud-init`:**
+1.  **IP Forwarding**: `sysctl -w net.ipv4.ip_forward=1`
+2.  **Masquerading**: `iptables -t nat -A POSTROUTING -o enp0s6 -j MASQUERADE`
+3.  **Firewall Fix**: Ubuntu's default firewall rules (`netfilter-persistent`) block forwarded traffic. We explicitly set:
+    ```bash
+    iptables -P FORWARD ACCEPT
+    iptables -F FORWARD
+    ```
+    *Without this fix, the private nodes can reach the Ingress node but packets are dropped before exiting to the internet.*
 
-### Kubernetes & GitOps
-*   **Distro**: K3s
-*   **GitOps**: Argo CD (App of Apps pattern)
-*   **Ingress**: Traefik (via Kubernetes Gateway API) running with `hostNetwork: true` on the Ingress node.
-*   **DNS/TLS**: ExternalDNS (Cloudflare) + Cert Manager (Let's Encrypt).
+## GitOps & CI/CD
 
-## Lessons Learned & Fixes
+### Argo CD Bootstrap
+*   **Pattern**: App-of-Apps.
+*   **Bootstrap**: Terraform generates an `argocd/` directory containing the Root App and all Infrastructure Apps (`cert-manager`, `external-dns`, `traefik`, `docs`).
+*   **Sync**: The K3s Server node installs Argo CD on boot and applies the Root App manifest automatically.
 
-### 1. NAT Routing on OCI
-By default, standard Linux instances don't forward traffic. The private nodes couldn't access the internet (needed for K3s installation).
-**Fix**: Enabled `net.ipv4.ip_forward=1` and set up `iptables -t nat -A POSTROUTING -o enp0s6 -j MASQUERADE` on the Ingress node.
+### CI/CD Pipeline (GitHub Actions)
+Since the cluster runs on **ARM64** (Ampere), we cannot use standard `amd64` Docker images.
+*   **Workflow**: `.github/workflows/docker-publish.yml`
+*   **Build**: Uses `docker/setup-qemu-action` and `docker/setup-buildx-action` to cross-compile for `linux/amd64` and `linux/arm64`.
+*   **Registry**: Images are pushed to GitHub Container Registry (GHCR).
+*   **Deployment**: Argo CD pulls the `latest` image from GHCR.
 
-### 2. OCI Firewall (Security Lists vs iptables)
-OCI Security Lists allow traffic at the network edge, but Ubuntu's internal `iptables` (via `netfilter-persistent`) was blocking forwarded traffic by default with a `REJECT` rule in the `FORWARD` chain.
-**Fix**: Flushed `FORWARD` chain and set policy to `ACCEPT`.
+## Ingress & Gateway API
+We use **Traefik** configured with Kubernetes Gateway API support.
+*   **Strategy**: `hostNetwork: true` on the Ingress Node.
+*   **Why**: OCI Load Balancers are paid (or limited). By running Traefik on the Ingress node's host network, ports 80/443 are exposed directly to the internet, bypassing the need for an external LB.
+*   **DNS**: Cloudflare (managed by ExternalDNS).
+*   **TLS**: Let's Encrypt (managed by Cert-Manager with Cloudflare DNS-01 solver).
+
+## Verification
+
+### 1. Check Connectivity
+From your local machine, via the Ingress bastion:
 ```bash
-iptables -P FORWARD ACCEPT
-iptables -F FORWARD
-netfilter-persistent save
+# Check if Server node is ready
+ssh -J ubuntu@<ingress-ip> ubuntu@10.0.2.10 "sudo kubectl get nodes"
 ```
 
-### 3. ARM64 Compatibility
-All images deployed to this cluster must be built for `linux/arm64`. Standard `amd64` images will crash with `exec format error`.
-**Solution**: Use Docker Buildx with QEMU in GitHub Actions to cross-compile images.
+### 2. Check GitOps Status
+```bash
+ssh -J ubuntu@<ingress-ip> ubuntu@10.0.2.10 "sudo kubectl get app -n argocd"
+```
 
-### 4. K3s & Gateway API
-K3s comes with Traefik by default, but we disabled it to manage it explicitly via GitOps. We then installed Traefik via Helm, configured to support the Gateway API `v1`.
+### 3. Build Status
+Check GitHub Actions:
+```bash
+gh run list
+```
 
-## Deployment Pipeline
-This documentation site is built with **Astro**, containerized, and pushed to **GitHub Container Registry (GHCR)** via GitHub Actions. Argo CD watches the repo and pulls the new image automatically.
+## Troubleshooting Log
+*   **Issue**: `curl: (6) Could not resolve host: get.k3s.io` on private nodes.
+    *   **Root Cause**: Ingress node `FORWARD` chain policy was `DROP`.
+    *   **Fix**: Added `iptables -P FORWARD ACCEPT` to `cloud-init`.
+*   **Issue**: `exec format error` in pods.
+    *   **Root Cause**: Deploying `amd64` images to `arm64` nodes.
+    *   **Fix**: Updated GH Actions to build multi-arch images.
