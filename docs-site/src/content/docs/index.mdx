@@ -1,0 +1,36 @@
+---
+title: K3s on Oracle Cloud Always Free
+description: Automating a High Availability-ready Kubernetes cluster on Oracle Cloud Infrastructure's Always Free tier.
+template: splash
+hero:
+  tagline: A robust, automated, GitOps-driven Kubernetes cluster on OCI Always Free ARM64.
+  image:
+    file: ../../assets/houston.webp
+  actions:
+    - text: Get Started
+      link: /setup/initial-setup
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/nsudhanva/k3s-oracle
+      icon: external
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Features
+
+<CardGrid stagger>
+	<Card title="Always Free" icon="star">
+		Runs entirely on OCI's Always Free tier using Ampere A1 Compute (4 OCPUs, 24GB RAM).
+	</Card>
+	<Card title="Automated NAT" icon="pencil">
+		Solves OCI's lack of free NAT Gateway with a software router on the Ingress node.
+	</Card>
+	<Card title="GitOps Driven" icon="add-document">
+		Managed by Argo CD with the App-of-Apps pattern. Infrastructure as Code via Terraform.
+	</Card>
+	<Card title="Gateway API" icon="setting">
+		Exposes services via Kubernetes Gateway API (Traefik) on ports 80/443 without paid Load Balancers.
+	</Card>
+</CardGrid>
