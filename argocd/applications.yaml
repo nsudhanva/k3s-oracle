@@ -138,6 +138,7 @@ spec:
         updateStrategy:
           rollingUpdate:
             maxUnavailable: 1
+            maxSurge: 0
         tolerations:
           - key: node-role.kubernetes.io/control-plane
             operator: Exists
