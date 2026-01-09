@@ -1,6 +1,26 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
+  name: gateway-api-crds
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/kubernetes-sigs/gateway-api.git
+    targetRevision: v1.0.0
+    path: config/crd/standard
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
   name: cert-manager
   namespace: argocd
   finalizers:
@@ -47,7 +67,7 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: traefik
+  name: envoy-gateway
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -56,10 +76,10 @@ spec:
   source:
     repoURL: ${git_repo_url}
     targetRevision: HEAD
-    path: argocd/infrastructure/traefik
+    path: argocd/infrastructure/envoy-gateway
   destination:
     server: https://kubernetes.default.svc
-    namespace: kube-system
+    namespace: envoy-gateway-system
   syncPolicy:
     automated:
       prune: true
