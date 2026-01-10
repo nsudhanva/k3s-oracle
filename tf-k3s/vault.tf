@@ -3,10 +3,6 @@ resource "oci_kms_vault" "k3s_vault" {
   display_name   = "k3s-secrets-vault"
   vault_type     = "DEFAULT"
   freeform_tags  = var.common_tags
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "oci_kms_key" "master_key" {
@@ -19,10 +15,6 @@ resource "oci_kms_key" "master_key" {
   key_shape {
     algorithm = "AES"
     length    = 32
-  }
-
-  lifecycle {
-    prevent_destroy = true
   }
 }
 

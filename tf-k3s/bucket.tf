@@ -9,10 +9,6 @@ resource "oci_objectstorage_bucket" "tfstate" {
   access_type    = "NoPublicAccess"
   versioning     = "Enabled"
   freeform_tags  = var.common_tags
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 output "tfstate_bucket_name" {
