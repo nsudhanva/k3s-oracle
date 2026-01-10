@@ -1,98 +1,89 @@
 ---
-title: Troubleshooting & Lessons
+title: Common Issues
 ---
 
-# Lessons Learned
+## Out of Capacity
 
-Building a cluster on Always Free OCI requires specific workarounds.
+Ampere A1 instances are frequently unavailable in popular regions.
 
-## 1. Out of Capacity
+Try changing the `availability_domain` index in `compute.tf` to 0, 1, or 2.
 
-The Ampere A1 (ARM64) instances are often "Out of Capacity" in popular regions (like US-Ashburn).
+## ARM64 Image Architecture
 
-- **Strategy**: If Terraform fails, try changing the `availability_domain` index in `compute.tf` (0, 1, or 2).
+Standard container images often fail with `exec format error` on ARM64 nodes.
 
-## 2. Image Architecture (ARM64)
+Build multi-architecture images using GitHub Actions with `docker/setup-qemu-action` for `linux/amd64,linux/arm64`.
 
-Deploying a standard `nginx` or `node` image often fails with `exec format error`.
+## Persistent Storage
 
-- **Fix**: Use GitHub Actions with `docker/setup-qemu-action` to build multi-arch images
+K3s uses `local-path-provisioner` by default. For block volumes, implement the OCI CSI driver.
 
-  (`linux/amd64,linux/arm64`).
+## SSH Tunneling
 
-## 3. Persistent Storage
+The API server is not publicly accessible. Create an SSH tunnel:
 
-OCI Block Volumes are "Always Free" up to 200GB.
+```bash
+ssh -N -L 16443:10.0.2.10:6443 ubuntu@<ingress-ip>
+```
 
-- **Implementation**: K3s uses `local-path-provisioner` by default. For real block volumes, the OCI CSI driver is required (not implemented in this basic setup).
+See [Accessing the Cluster](/operation/accessing-cluster/) for complete instructions.
 
-## 4. SSH Tunneling
+## Firewall Blocking CNI Traffic
 
-Since the API server is private, you cannot run `kubectl` from your Mac directly.
+OCI Ubuntu images have strict iptables rules that block Flannel VXLAN traffic.
 
-- **Fix**: Open an SSH tunnel to the Ingress node:
+Symptom: Pods cannot resolve DNS with `i/o timeout` errors.
 
-  ```bash
-  ssh -N -L 16443:10.0.2.10:6443 ubuntu@<ingress-ip>
-  ```
+Fix:
 
-  We use port `16443` locally to avoid conflicts with any local Kubernetes cluster.
+```bash
+sudo iptables -P INPUT ACCEPT
+sudo iptables -P FORWARD ACCEPT
+sudo iptables -F
+sudo netfilter-persistent save
+```
 
-  See [Accessing the Cluster](/operation/accessing-cluster/) for complete setup instructions.
+Cloud-init applies these rules automatically.
 
-## 5. Network & CNI (Firewall)
+## Argo CD Helm Chart Errors
 
-OCI Ubuntu images have strict `iptables` that can block Flannel VXLAN (UDP 8472) traffic between nodes, causing DNS timeouts inside the cluster.
+When using Kustomize to inflate Helm charts, Argo CD requires explicit enablement.
 
-- **Symptom**: Pods cannot resolve DNS (`i/o timeout` lookup `kubernetes.default`).
-- **Fix**: Flush default rules. Cloud-init handles this, but if it fails:
+Error: `must specify --enable-helm`
 
-  ```bash
-  sudo iptables -P INPUT ACCEPT
-  sudo iptables -P FORWARD ACCEPT
-  sudo iptables -F
-  sudo netfilter-persistent save
-  ```
+Fix: Patch `argocd-cm` ConfigMap:
 
-## 6. Argo CD & Helm Charts
+```yaml
+data:
+  kustomize.buildOptions: "--enable-helm"
+```
 
-When using Kustomize to inflate Helm Charts (like `cert-manager`), Argo CD requires explicit enablement.
+## SSH Key Format
 
-- **Error**: `must specify --enable-helm`.
-- **Fix**: Patch `argocd-cm` ConfigMap in the `argocd-self-managed` application.
+OCI requires OpenSSH formatted public keys, not PEM format.
 
-  ```yaml
-  data:
-    kustomize.buildOptions: "--enable-helm"
-  ```
+Convert PEM keys:
 
-## 7. SSH Key Format
+```bash
+ssh-keygen -y -f ~/.oci/oci_api_key.pem > ssh_key.pub
+```
 
-OCI Metadata requires OpenSSH formatted public keys (`ssh-rsa ...`), not PEM format (`-----BEGIN...`).
+## Docker Hub Rate Limiting
 
-- **Fix**: Convert PEM keys before using in Terraform.
+Docker Hub rate-limits OCI artifact requests from cloud IPs.
 
-  ```bash
-  ssh-keygen -y -f ~/.oci/oci_api_key.pem > oci_key.pub
-  ```
+Use Git-based installation for Envoy Gateway instead of Helm OCI.
 
-## 8. Envoy Gateway & Docker Hub OCI
+## External DNS Zone ID Discovery
 
-Docker Hub often rate-limits or blocks OCI artifact requests (`oci://`) from Cloud IPs without authentication (`401 Unauthorized`).
+Scoped Cloudflare API tokens may fail to discover the zone ID automatically.
 
-- **Fix**: Use the Git-based installation method instead of Helm OCI for Envoy Gateway. The `kustomization.yaml` should point to the raw `install.yaml` from the GitHub release.
+Error: `Could not route to /client/v4/zones//dns_records...`
 
-## 9. External DNS & Cloudflare Zone ID
+Fix: Explicitly provide the zone ID with `--zone-id-filter=<zone-id>`.
 
-If your Cloudflare API Token is scoped to specific zones, `external-dns` (and `cert-manager`) might fail to discover the Zone ID automatically.
+## Gateway API External DNS Integration
 
-- **Error**: `Could not route to /client/v4/zones//dns_records...` (empty zone ID).
-- **Fix**: Explicitly provide the Zone ID in the configuration.
-  - For `external-dns`: Use `--zone-id-filter=<zone-id>`.
-  - For `cert-manager`: Ensure the Token has `Zone:Read` permission or use an API Key (Global) if discovery fails persistently.
+External DNS may not detect HTTPRoute targets if the Gateway status address is internal.
 
-## 10. Gateway API & External DNS
-
-External DNS might not pick up `HTTPRoute` targets automatically if the Gateway status address is internal.
-
-- **Fix**: Add the annotation `external-dns.alpha.kubernetes.io/target: <public-ip>` to the `HTTPRoute` or `Gateway`.
+Fix: Add the annotation `external-dns.alpha.kubernetes.io/target: <public-ip>` to the HTTPRoute.

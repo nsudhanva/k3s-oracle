@@ -1,9 +1,9 @@
 ---
 title: Welcome
-description: Complete guide to the OCI K3s Cluster.
+description: K3s cluster on OCI Always Free tier
 template: splash
 hero:
-  tagline: A production-ready, self-healing K3s cluster on OCI Always Free tier using GitOps.
+  tagline: Production-ready K3s cluster on Oracle Cloud Infrastructure using GitOps
   actions:
     - text: Get Started
       link: /getting-started/prerequisites/
@@ -16,19 +16,19 @@ hero:
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-## Key Features
+## Features
 
 <CardGrid stagger>
-	<Card title="Always Free" icon="rocket">
-		Runs entirely on Oracle Cloud's free tier (Ampere A1 ARM64 instances).
-	</Card>
-	<Card title="GitOps Powered" icon="github">
-		Managed by **Argo CD**. All infrastructure and applications are defined as code.
-	</Card>
-	<Card title="Modern Ingress" icon="seti:graphql">
-		Uses **Envoy Gateway** (Gateway API) for advanced traffic management.
-	</Card>
-    <Card title="Automated DNS & TLS" icon="setting">
-        **External DNS** (Cloudflare) and **Cert Manager** (Let's Encrypt) handle domains and certificates automatically.
-    </Card>
+  <Card title="Always Free" icon="rocket">
+    Runs on Oracle Cloud's free tier using Ampere A1 ARM64 instances.
+  </Card>
+  <Card title="GitOps" icon="github">
+    Managed by Argo CD with infrastructure and applications defined as code.
+  </Card>
+  <Card title="Gateway API" icon="seti:graphql">
+    Envoy Gateway provides modern ingress with Gateway API.
+  </Card>
+  <Card title="Automatic TLS" icon="setting">
+    External DNS and Cert Manager automate DNS and certificates.
+  </Card>
 </CardGrid>

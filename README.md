@@ -1,38 +1,39 @@
-# Fully Automated OCI Always Free K3s Cluster
+# K3s on Oracle Cloud Always Free
 
-This project sets up a High Availability (sort of) K3s cluster on Oracle Cloud Infrastructure (OCI) using **Always Free** resources (Ampere A1 Flex instances). It bootstraps Argo CD for GitOps and deploys a documentation application exposed via Kubernetes Gateway API (Envoy Gateway) with automatic HTTPS (Cert Manager + Cloudflare).
+A production-ready K3s cluster on Oracle Cloud Infrastructure using Always Free tier resources. This project provisions infrastructure with Terraform, bootstraps Argo CD for GitOps, and deploys applications via Gateway API with automatic HTTPS.
 
 ## Architecture
 
-- **Infrastructure**: Terraform managed.
-  - **Network**: VCN with Public and Private Subnets.
-  - **Compute**: 3x VM.Standard.A1.Flex instances (ARM64).
-    - `k3s-ingress` (1 OCPU, 6GB RAM): Public Subnet. Acts as NAT Gateway and Ingress Gateway. Static IP `10.0.1.10`.
-    - `k3s-server` (2 OCPU, 12GB RAM): Private Subnet. Runs K3s Server and Argo CD. Static IP `10.0.2.10`.
-    - `k3s-worker` (1 OCPU, 6GB RAM): Private Subnet. Runs K3s Agent.
-- **Cluster**: K3s.
-- **GitOps**: Argo CD bootstrapped automatically.
-- **Ingress**: Envoy Gateway (via Gateway API) running on the Public Node (`hostPort: 80/443`).
-- **DNS/TLS**: External DNS (Cloudflare) + Cert Manager (Let's Encrypt HTTP-01 via Gateway API).
+The cluster runs on three Ampere A1 ARM64 instances within OCI's Always Free limits (4 OCPUs, 24GB RAM total):
+
+| Node | Resources | Subnet | Role |
+|------|-----------|--------|------|
+| k3s-ingress | 1 OCPU, 6GB | Public (10.0.1.0/24) | NAT gateway, Envoy Gateway |
+| k3s-server | 2 OCPU, 12GB | Private (10.0.2.0/24) | K3s control plane, Argo CD |
+| k3s-worker | 1 OCPU, 6GB | Private (10.0.2.0/24) | Application workloads |
+
+## Components
+
+| Component | Purpose |
+|-----------|---------|
+| K3s | Lightweight Kubernetes distribution |
+| Argo CD | GitOps continuous delivery |
+| Envoy Gateway | Gateway API implementation |
+| External DNS | Automatic Cloudflare DNS updates |
+| Cert Manager | Let's Encrypt certificate automation |
 
 ## Prerequisites
 
-1. **OCI Account**: Always Free eligible.
-2. **Cloudflare Account**: Domain managed by Cloudflare + API Token (Edit Zone DNS capability).
-3. **Git Repository**: A **private** repository (GitHub) to hold your GitOps manifests.
-4. **Terraform**: Installed locally.
+- OCI Account with Always Free eligibility
+- Cloudflare account with a managed domain
+- GitHub account with a Personal Access Token
+- Terraform installed locally
 
-## Setup Instructions
+## Quick Start
 
-### 1. Prepare Credentials
+### Create Configuration
 
-- Ensure you have your OCI API Key (`.pem`) and config details.
-- Have your OCI SSH Public Key ready (e.g. `~/.oci/oci_api_key_public.pem`).
-- Create a GitHub Personal Access Token (Classic) with `repo` and `read:packages` scopes.
-
-### 2. Configure Terraform
-
-Create a `terraform.tfvars` file in `tf-k3s/` directory with your details:
+Create `tf-k3s/terraform.tfvars`:
 
 ```hcl
 tenancy_ocid         = "ocid1.tenancy.oc1..."
@@ -42,66 +43,47 @@ private_key_path     = "/path/to/oci_api_key.pem"
 region               = "us-ashburn-1"
 compartment_ocid     = "ocid1.compartment.oc1..."
 
-ssh_public_key_path  = "/path/to/oci_api_key_public.pem" # Path to your OpenSSH formatted public key
+ssh_public_key_path  = "/path/to/ssh_key.pub"
 cloudflare_api_token = "your-cloudflare-token"
 cloudflare_zone_id   = "your-zone-id"
 domain_name          = "k3s.example.com"
-acme_email           = "you@example.com"
+acme_email           = "admin@example.com"
 
-git_repo_url         = "https://github.com/your-user/your-repo.git"
-git_pat              = "github_pat_..."
+git_repo_url         = "https://github.com/your-user/k3s-oracle.git"
+git_pat              = "ghp_..."
 git_username         = "your-github-username"
 ```
 
-### 3. Generate Manifests & Infrastructure
-
-Run Terraform to create the infrastructure and generate the GitOps manifests locally.
+### Deploy
 
 ```bash
 cd tf-k3s
 terraform init
-terraform apply -auto-approve
+terraform apply
 ```
 
-This will:
+### Push Manifests
 
-1. Provision OCI Networking and Instances.
-2. Generate Kubernetes manifests in `argocd/` directory.
-3. Bootstrap K3s (wait a few minutes for cloud-init).
-
-### 4. Push to Git (Crucial Step)
-
-Terraform generates the specific manifests for your domain and environment. You MUST push them to your repository so Argo CD can see them.
+Terraform generates GitOps manifests that must be committed:
 
 ```bash
-cd .. # Back to repo root
 git add argocd/
 git commit -m "Configure cluster manifests"
 git push
 ```
 
-### 5. Verify Installation
+### Verify
 
-Get the Kubeconfig command from Terraform outputs (or use the displayed SSH command):
-
-```bash
-terraform output kubeconfig_command
-```
-
-Check Argo CD status:
+Wait approximately five minutes for bootstrapping, then verify:
 
 ```bash
-# Connect via Jump Host
 ssh -J ubuntu@<ingress-ip> ubuntu@10.0.2.10 "sudo kubectl get applications -n argocd"
 ```
 
-You should see `root-app` and child apps syncing. Note that `envoy-gateway` and `external-dns` might take a moment to stabilize.
+## Documentation
 
-### 6. Access Application
+Full documentation is available at the deployed docs site or in `docs-site/src/content/docs/`.
 
-Visit `https://k3s.example.com` (your configured domain).
-It should load the documentation site, secured with a valid Let's Encrypt certificate.
+## License
 
-## Troubleshooting
-
-See `docs-site/src/content/docs/troubleshooting.md` for detailed solutions to common issues like firewall blocks, SSH key formats, and OCI specific quirks.
+MIT

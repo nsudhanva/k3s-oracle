@@ -1,67 +1,50 @@
 ---
-title: Networking Details
+title: Networking
 ---
 
-# Networking & NAT Routing
+OCI Always Free does not include a managed NAT Gateway. This cluster implements software NAT on the ingress node.
 
-Since OCI Always Free does not include a Managed NAT Gateway, we implement a software NAT.
+## Network Topology
 
-## Topology
+| Subnet | CIDR | Nodes |
+|--------|------|-------|
+| Public | 10.0.1.0/24 | k3s-ingress |
+| Private | 10.0.2.0/24 | k3s-server, k3s-worker |
 
-- **VCN**: `10.0.0.0/16`
-- **Public Subnet**: `10.0.1.0/24`. Only the Ingress node lives here.
-- **Private Subnet**: `10.0.2.0/24`. Server and Worker nodes.
+The VCN uses CIDR 10.0.0.0/16 with an internet gateway attached to the public subnet.
 
-## The NAT Node (`k3s-ingress`)
+## NAT Configuration
 
-The Ingress node handles all egress traffic for the private subnet.
+The ingress node routes egress traffic for the private subnet. Cloud-init applies these configurations:
 
-### Mandatory Configuration (Applied via Cloud-Init)
+### IP Forwarding
 
-1. **Enable Forwarding**:
+```bash
+echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/99-nat.conf
+sysctl -p /etc/sysctl.d/99-nat.conf
+```
 
-   ```bash
-   echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/99-nat.conf
-   sysctl -p /etc/sysctl.d/99-nat.conf
-   ```
+### Masquerade
 
-2. **Iptables Masquerade**:
+```bash
+iptables -t nat -A POSTROUTING -o enp0s6 -j MASQUERADE
+```
 
-   ```bash
-   iptables -t nat -A POSTROUTING -o enp0s6 -j MASQUERADE
-   ```
+### Firewall Rules
 
-3. **The "Trap": Firewall Rules**:
+Ubuntu 24.04 on OCI includes restrictive iptables rules that block forwarded traffic:
 
-   Ubuntu 24.04 on OCI comes with `netfilter-persistent` and a default `REJECT` rule in the `FORWARD` chain. **Packets
-
-   will reach the node but won't exit without these commands**:
-
-   ```bash
-
-   iptables -P FORWARD ACCEPT
-
-   iptables -F FORWARD
-
-   netfilter-persistent save
-
-   ```
+```bash
+iptables -P FORWARD ACCEPT
+iptables -F FORWARD
+netfilter-persistent save
+```
 
 ## Ingress Traffic
 
-We use the **Kubernetes Gateway API** with Envoy Gateway as the implementation.
+Envoy Gateway handles inbound traffic using hostPort binding instead of hostNetwork. This approach maintains cluster network connectivity while exposing ports 80 and 443 on the host interface.
 
-### Why hostPort Instead of hostNetwork?
-
-Envoy Gateway uses `hostPort` binding instead of `hostNetwork: true`:
-
-- **Service Type**: `ClusterIP` (internal only)
-- **Port Mapping**: Envoy container binds ports 80/443 directly to the host interface
-- **Benefit**: Pod remains in cluster network (overlay), can resolve internal services via CoreDNS
-
-### Configuration
-
-The Envoy proxy is configured via `EnvoyProxy` custom resource:
+Configuration via EnvoyProxy custom resource:
 
 ```yaml
 spec:
@@ -70,7 +53,7 @@ spec:
       envoyDeployment:
         pod:
           nodeSelector:
-            role: ingress  # Only runs on ingress node
+            role: ingress
         patch:
           value:
             spec:
@@ -83,8 +66,6 @@ spec:
                       hostPort: 443
 ```
 
-### DNS
+## DNS
 
-- External DNS automatically updates Cloudflare A records
-- Points your domain to the ingress node's public IP
-- Configured via `external-dns.alpha.kubernetes.io/target` annotation on HTTPRoutes
+External DNS watches HTTPRoute resources and updates Cloudflare A records. The `external-dns.alpha.kubernetes.io/target` annotation specifies the ingress node public IP for each route.

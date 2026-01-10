@@ -4,7 +4,7 @@ kind: Kustomization
 helmCharts:
   - name: argo-cd
     repo: https://argoproj.github.io/argo-helm
-    version: 7.3.11  # Matching a recent stable version or the one likely installed
+    version: 7.3.11
     releaseName: argocd
     namespace: argocd
     valuesInline:
@@ -13,8 +13,3 @@ helmCharts:
           kustomize.buildOptions: "--enable-helm"
         service:
           type: ClusterIP
-      # We must ensure we don't break the existing install.
-      # K3s HelmChart might have installed it differently.
-      # Usually 'argocd-self-managed' is tricky if it conflicts with K3s HelmController.
-      # But since we want GitOps, we usually disable K3s one or let Argo takeover.
-      # For now, defining it here allows Argo to upgrade itself.
