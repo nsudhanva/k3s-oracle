@@ -8,7 +8,7 @@ spec:
   repo: https://charts.external-secrets.io
   targetNamespace: external-secrets
   createNamespace: true
-  version: 0.10.0
+  version: 1.2.1
   valuesContent: |-
     installCRDs: true
     webhook:
