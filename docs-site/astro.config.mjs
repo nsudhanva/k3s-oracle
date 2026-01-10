@@ -21,7 +21,8 @@ export default defineConfig({
           label: 'Architecture',
           items: [
             { label: 'Overview', link: '/architecture/overview' },
-            { label: 'Free Tier Design', link: '/architecture/free-tier-design' },
+            { label: 'Always Free Tier', link: '/architecture/always-free' },
+            { label: 'Ingress Without Load Balancer', link: '/architecture/ingress' },
             { label: 'Networking', link: '/architecture/networking' },
             { label: 'GitOps', link: '/architecture/gitops' },
           ],
@@ -31,6 +32,7 @@ export default defineConfig({
           items: [
             { label: 'Accessing Cluster', link: '/operation/accessing-cluster' },
             { label: 'Deploying Apps', link: '/operation/deploying-apps' },
+            { label: 'Example: Deploy Nginx', link: '/operation/example-nginx' },
           ],
         },
         {
