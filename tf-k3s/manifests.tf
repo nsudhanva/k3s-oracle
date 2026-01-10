@@ -25,7 +25,7 @@ resource "local_file" "external_dns_kustomization" {
 }
 
 resource "local_file" "external_dns_rbac" {
-  for_each = fileset("${path.module}/templates/manifests/external-dns", "rbac*.yaml")
+  for_each = fileset("${path.module}/templates/manifests/external-dns", "*.yaml")
   filename = "../argocd/infrastructure/external-dns/${each.value}"
   content  = file("${path.module}/templates/manifests/external-dns/${each.value}")
 }
