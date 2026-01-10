@@ -11,7 +11,7 @@ output "worker_private_ip" {
 }
 
 output "kubeconfig_command" {
-  value = "ssh -i <private_key> ubuntu@${oci_core_instance.ingress.public_ip} 'ssh ubuntu@10.0.2.10 sudo cat /etc/rancher/k3s/k3s.yaml'"
+  value = "ssh -i /Users/sudhanva/.oci/oci_api_key.pem ubuntu@${oci_core_instance.ingress.public_ip} 'ssh ubuntu@10.0.2.10 sudo cat /etc/rancher/k3s/k3s.yaml'"
 }
 
 output "domain_url" {

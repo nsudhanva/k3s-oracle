@@ -22,6 +22,7 @@ Create `tf-k3s/terraform.tfvars`. Ensure the following variables are set:
 - `git_pat`: Your GitHub Personal Access Token (Classic) with `repo` and `read:packages` scope. This allows Argo CD to access the repo and K3s to pull private images.
 - `git_username`: Your GitHub username (used for GHCR image paths).
 - `git_repo_name`: The name of this repository (default `k3s-oracle`).
+- `ssh_public_key_path`: Path to your OCI/SSH public key (default `/Users/sudhanva/.oci/oci_api_key_public.pem`).
 
 ## 3. Provisioning
 

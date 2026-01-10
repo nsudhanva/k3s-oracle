@@ -5,10 +5,10 @@ variable "private_key_path" {}
 variable "region" {}
 variable "compartment_ocid" {}
 
-variable "my_ssh_public_key" {
-  description = "SSH Public Key. If empty, a new key pair will be generated."
+variable "ssh_public_key_path" {
+  description = "Path to the SSH Public Key to use for instances."
   type        = string
-  default     = ""
+  default     = "/Users/sudhanva/.oci/oci_api_key_public.pem"
 }
 
 variable "ssh_source_cidr" {

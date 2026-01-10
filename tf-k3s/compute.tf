@@ -11,6 +11,10 @@ data "oci_core_images" "ubuntu" {
   sort_order               = "DESC"
 }
 
+locals {
+  ssh_public_key = file(var.ssh_public_key_path)
+}
+
 # --- Ingress / NAT Instance (Public) ---
 resource "oci_core_instance" "ingress" {
   compartment_id      = var.compartment_ocid
