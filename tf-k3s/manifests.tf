@@ -64,8 +64,9 @@ resource "local_file" "docs_manifests" {
   for_each = fileset("${path.module}/templates/manifests/docs", "*")
   filename = "../argocd/apps/docs/${replace(each.value, ".tpl", "")}"
   content = templatefile("${path.module}/templates/manifests/docs/${each.value}", {
-    domain_name   = var.domain_name
-    git_username  = var.git_username
-    git_repo_name = var.git_repo_name
+    domain_name       = var.domain_name
+    git_username      = var.git_username
+    git_repo_name     = var.git_repo_name
+    ingress_public_ip = oci_core_instance.ingress.public_ip
   })
 }
