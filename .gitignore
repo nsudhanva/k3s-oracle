@@ -1,6 +1,7 @@
 # CLI configuration files
 .terraformrc
 terraform.rc
+.claude/settings.local.json
 
 # OS files
 .DS_Store
