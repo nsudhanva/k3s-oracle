@@ -23,10 +23,13 @@ helmCharts:
         - sudhanva.me
       extraArgs:
         - --zone-id-filter=293c1768d72a5378bbdb4d59fc8e8bfc
+        - --source=gateway-httproute
+        - --service-type-filter=ClusterIP
+        - --service-type-filter=LoadBalancer
       sources:
         - ingress
         - crd
-        - gateway-httproute
+        - service
       rbac:
         create: true
         extraRules:
