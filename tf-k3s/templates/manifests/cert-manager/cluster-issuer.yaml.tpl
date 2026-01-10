@@ -8,9 +8,11 @@ spec:
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: cloudflare-issuer-account-key
-    solvers:
-      - dns01:
-          cloudflare:
-            apiTokenSecretRef:
-              name: cloudflare-api-token-secret
-              key: api-token
+        solvers:
+        - http01:
+            gatewayHTTPRoute:
+              parentRefs:
+              - name: docs-gateway
+                namespace: default
+                kind: Gateway
+                group: gateway.networking.k8s.io
