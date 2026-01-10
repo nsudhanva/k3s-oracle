@@ -10,22 +10,32 @@ export default defineConfig({
       ],
       sidebar: [
         {
-          label: 'Setup',
+          label: 'Getting Started',
           items: [
-            { label: 'Initial Setup', link: '/setup/initial-setup' },
+            { label: 'Prerequisites', link: '/getting-started/prerequisites' },
+            { label: 'Installation', link: '/getting-started/installation' },
+            { label: 'Configuration', link: '/getting-started/configuration' },
           ],
         },
         {
-          label: 'Guides',
+          label: 'Architecture',
           items: [
-            { label: 'Networking & NAT', link: '/networking/nat-and-firewall' },
-            { label: 'GitOps & Argo CD', link: '/gitops/app-of-apps' },
+            { label: 'Overview', link: '/architecture/overview' },
+            { label: 'Networking', link: '/architecture/networking' },
+            { label: 'GitOps', link: '/architecture/gitops' },
           ],
         },
         {
-          label: 'Reference',
+          label: 'Operation',
           items: [
-            { label: 'Troubleshooting', link: '/troubleshooting' },
+            { label: 'Accessing Cluster', link: '/operation/accessing-cluster' },
+            { label: 'Deploying Apps', link: '/operation/deploying-apps' },
+          ],
+        },
+        {
+          label: 'Troubleshooting',
+          items: [
+            { label: 'Common Issues', link: '/troubleshooting/common-issues' },
           ],
         },
       ],
