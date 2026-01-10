@@ -1,6 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+resources:
+  - https://raw.githubusercontent.com/kubernetes-sigs/external-dns/master/docs/contributing/crd-source/crd-manifest.yaml
+  - rbac.yaml
+
 helmCharts:
   - name: external-dns
     repo: https://kubernetes-sigs.github.io/external-dns/
