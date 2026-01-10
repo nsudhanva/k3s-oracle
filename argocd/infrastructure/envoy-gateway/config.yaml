@@ -20,7 +20,7 @@ spec:
     type: Kubernetes
     kubernetes:
       envoyService:
-        type: NodePort
+        type: ClusterIP
       useListenerPortAsContainerPort: true
       envoyDeployment:
         pod:
@@ -48,5 +48,14 @@ spec:
             spec:
               template:
                 spec:
-                  hostNetwork: true
-                  dnsPolicy: ClusterFirstWithHostNet
+                  containers:
+                    - name: envoy
+                      ports:
+                        - containerPort: 80
+                          hostPort: 80
+                          name: http
+                          protocol: TCP
+                        - containerPort: 443
+                          hostPort: 443
+                          name: https
+                          protocol: TCP
