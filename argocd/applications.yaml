@@ -187,3 +187,25 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
 
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: managed-secrets
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/nsudhanva/k3s-oracle.git
+    targetRevision: HEAD
+    path: argocd/infrastructure/managed-secrets
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
