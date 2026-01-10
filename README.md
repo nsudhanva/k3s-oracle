@@ -82,7 +82,14 @@ ssh -J ubuntu@<ingress-ip> ubuntu@10.0.2.10 "sudo kubectl get applications -n ar
 
 ## Documentation
 
-Full documentation is available at the deployed docs site or in `docs-site/src/content/docs/`.
+The full documentation is available at the live cluster site: **[https://k3s.sudhanva.me](https://k3s.sudhanva.me)**.
+
+To view and edit the documentation locally:
+```bash
+cd docs-site
+bun install
+bun start
+```
 
 ## License
 
