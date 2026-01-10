@@ -2,6 +2,27 @@
 title: Installation
 ---
 
+```mermaid
+flowchart LR
+    subgraph Step1["1. Provision"]
+        TF[terraform apply]
+    end
+
+    subgraph Step2["2. Push"]
+        Git[git push]
+    end
+
+    subgraph Step3["3. Wait"]
+        Boot[Cloud-init<br/>Bootstrap]
+    end
+
+    subgraph Step4["4. Verify"]
+        Check[kubectl get nodes]
+    end
+
+    TF --> Git --> Boot --> Check
+```
+
 ## Provisioning
 
 After creating `terraform.tfvars`, run Terraform to provision the infrastructure:
@@ -10,6 +31,23 @@ After creating `terraform.tfvars`, run Terraform to provision the infrastructure
 cd tf-k3s
 terraform init
 terraform apply
+```
+
+```mermaid
+sequenceDiagram
+    participant You as Developer
+    participant TF as Terraform
+    participant OCI as OCI API
+    participant Nodes as Compute Instances
+
+    You->>TF: terraform apply
+    TF->>OCI: Create VCN
+    TF->>OCI: Create Subnets
+    TF->>OCI: Create Security Lists
+    TF->>OCI: Create Instances
+    OCI->>Nodes: Launch with cloud-init
+    TF->>You: Output IPs
+    Note over Nodes: Bootstrapping begins...
 ```
 
 Terraform creates the OCI networking and compute instances, then generates Kubernetes manifests in the `argocd/` directory.
@@ -25,9 +63,40 @@ git commit -m "Configure cluster manifests"
 git push
 ```
 
+```mermaid
+flowchart LR
+    TF[Terraform] -->|generates| Manifests[argocd/]
+    Manifests -->|git push| GH[GitHub]
+    GH -->|syncs| Argo[Argo CD]
+    Argo -->|deploys| Cluster[K3s Cluster]
+```
+
 ## Bootstrapping
 
 Cloud-init scripts automatically configure each node:
+
+```mermaid
+gantt
+    title Node Bootstrap Timeline
+    dateFormat X
+    axisFormat %s
+
+    section Ingress
+    Enable IP forwarding    :0, 30
+    Configure iptables NAT  :30, 60
+    Install K3s agent       :60, 120
+    Join cluster            :120, 150
+
+    section Server
+    Install K3s server      :0, 90
+    Deploy Argo CD          :90, 150
+    Create secrets          :150, 180
+    Sync applications       :180, 300
+
+    section Worker
+    Install K3s agent       :0, 90
+    Join cluster            :90, 120
+```
 
 - Ingress node enables IP forwarding and NAT
 - Server node installs K3s and Argo CD

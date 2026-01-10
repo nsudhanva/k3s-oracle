@@ -4,6 +4,14 @@ title: Always Free Tier
 
 This cluster runs entirely within Oracle Cloud Infrastructure's Always Free tier limits.
 
+```mermaid
+pie showData
+    title OCI Always Free Resource Allocation
+    "k3s-server (2 OCPU, 12GB)" : 50
+    "k3s-ingress (1 OCPU, 6GB)" : 25
+    "k3s-worker (1 OCPU, 6GB)" : 25
+```
+
 ## Resource Allocation
 
 OCI Always Free provides 4 OCPUs and 24GB RAM for Ampere A1 instances. This cluster divides these resources across three nodes:
@@ -15,6 +23,23 @@ OCI Always Free provides 4 OCPUs and 24GB RAM for Ampere A1 instances. This clus
 | k3s-worker | 1 | 6GB | Application workloads |
 
 Total: 4 OCPUs, 24GB RAM (exactly at the limit)
+
+```mermaid
+graph LR
+    subgraph Free["Always Free (4 OCPU, 24GB)"]
+        I[Ingress<br/>1 OCPU<br/>6GB]
+        S[Server<br/>2 OCPU<br/>12GB]
+        W[Worker<br/>1 OCPU<br/>6GB]
+    end
+
+    subgraph Used["Used: 4 OCPU, 24GB"]
+        Total[100% Utilized]
+    end
+
+    I --> Total
+    S --> Total
+    W --> Total
+```
 
 ## Always Free Components
 
@@ -43,13 +68,48 @@ Ampere A1 Flex instances are ARM64-based. Container images must support the `lin
 
 ## Cost Avoidance
 
+This cluster replaces paid OCI services with free alternatives:
+
+```mermaid
+flowchart LR
+    subgraph Paid["Paid Services (Avoided)"]
+        LB[OCI Load Balancer<br/>~$12/month]
+        NAT[OCI NAT Gateway<br/>~$32/month]
+        BV[Block Volumes<br/>~$0.02/GB/month]
+    end
+
+    subgraph Free["Free Alternatives (Used)"]
+        HP[hostPort Binding<br/>on Ingress Node]
+        IPT[iptables NAT<br/>on Ingress Node]
+        LP[local-path-provisioner<br/>on Boot Volume]
+    end
+
+    LB -.->|replaced by| HP
+    NAT -.->|replaced by| IPT
+    BV -.->|replaced by| LP
+```
+
 ### No Load Balancer
 
 OCI Load Balancers are not included in Always Free. This cluster uses hostPort binding on the ingress node to expose ports 80 and 443 directly.
 
+```mermaid
+flowchart LR
+    Internet((Internet)) -->|:443| Ingress[Ingress Node<br/>hostPort]
+    Ingress --> Envoy[Envoy Pod]
+    Envoy --> Apps[Applications]
+```
+
 ### No NAT Gateway
 
 OCI NAT Gateways are not included in Always Free. The ingress node runs iptables masquerade to provide outbound internet access for the private subnet.
+
+```mermaid
+flowchart LR
+    Private[Private Subnet<br/>10.0.2.0/24] -->|outbound| Ingress[Ingress Node<br/>iptables MASQUERADE]
+    Ingress -->|SNAT| IGW[Internet Gateway]
+    IGW --> Internet((Internet))
+```
 
 ### No Block Volumes
 

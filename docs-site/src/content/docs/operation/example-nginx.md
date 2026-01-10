@@ -4,6 +4,27 @@ title: Example - Deploy Nginx
 
 This guide walks through deploying a public nginx application on the cluster.
 
+```mermaid
+flowchart TB
+    subgraph Internet
+        User((User))
+        CF[Cloudflare DNS]
+    end
+
+    subgraph Cluster["K3s Cluster"]
+        GW[public-gateway<br/>:443]
+        Route[nginx-route]
+        Svc[nginx Service]
+        Pod[nginx Pod]
+    end
+
+    User -->|https://nginx.example.com| CF
+    CF -->|A Record| GW
+    GW --> Route
+    Route --> Svc
+    Svc --> Pod
+```
+
 ## Overview
 
 You will:
@@ -12,6 +33,31 @@ You will:
 2. Register the application with Argo CD
 3. Configure DNS and TLS
 4. Verify the deployment
+
+```mermaid
+flowchart LR
+    subgraph Step1["Step 1"]
+        D[deployment.yaml]
+        S[service.yaml]
+    end
+
+    subgraph Step2["Step 2"]
+        GW[Update Gateway]
+        HR[httproute.yaml]
+        Cert[certificate.yaml]
+    end
+
+    subgraph Step3["Step 3"]
+        App[applications.yaml]
+    end
+
+    subgraph Step4["Step 4"]
+        Push[git push]
+        Verify[curl https://...]
+    end
+
+    Step1 --> Step2 --> Step3 --> Step4
+```
 
 ## Create Application Directory
 

@@ -4,12 +4,60 @@ title: Deploying Applications
 
 This cluster uses GitOps. Applications are deployed by committing manifests to the repository.
 
+```mermaid
+flowchart LR
+    subgraph Developer
+        Code[Write Manifests]
+    end
+
+    subgraph Git["Git Repository"]
+        Manifests[argocd/apps/myapp/]
+        AppYAML[applications.yaml]
+    end
+
+    subgraph Cluster["K3s Cluster"]
+        Argo[Argo CD]
+        App[Application<br/>Pods]
+    end
+
+    Code -->|1. Create| Manifests
+    Code -->|2. Register| AppYAML
+    Code -->|3. git push| Git
+    Git -->|4. Sync| Argo
+    Argo -->|5. Deploy| App
+```
+
 ## Workflow
 
 1. Create a directory in `argocd/apps/<app-name>/`
 2. Add Deployment, Service, and HTTPRoute manifests
 3. Register the application in `argocd/applications.yaml`
 4. Commit and push
+
+```mermaid
+flowchart TB
+    subgraph Files["Required Files"]
+        Deploy[deployment.yaml]
+        Svc[service.yaml]
+        Route[httproute.yaml]
+        Cert[certificate.yaml]
+    end
+
+    subgraph K8s["Kubernetes Resources"]
+        Pods[Pods]
+        Service[Service]
+        HTTPRoute[HTTPRoute]
+        TLS[TLS Secret]
+    end
+
+    Deploy --> Pods
+    Svc --> Service
+    Route --> HTTPRoute
+    Cert --> TLS
+
+    HTTPRoute --> Service
+    Service --> Pods
+```
 
 ## Adding via Terraform
 

@@ -4,6 +4,27 @@ title: Accessing the Cluster
 
 The K3s control plane runs in a private subnet. Access requires using the ingress node as a jump host.
 
+```mermaid
+flowchart LR
+    subgraph Local["Your Machine"]
+        Terminal[Terminal]
+        Kubectl[kubectl]
+    end
+
+    subgraph Public["Public Subnet"]
+        Ingress[k3s-ingress<br/>Jump Host]
+    end
+
+    subgraph Private["Private Subnet"]
+        Server[k3s-server<br/>API :6443]
+    end
+
+    Terminal -->|SSH| Ingress
+    Ingress -->|SSH -J| Server
+    Kubectl -->|:16443 tunnel| Ingress
+    Ingress -->|:6443| Server
+```
+
 ## Connection Details
 
 Get IP addresses from Terraform:
@@ -34,6 +55,24 @@ ssh -J ubuntu@<ingress-public-ip> ubuntu@<worker-private-ip>
 ```
 
 ## Kubectl Access
+
+```mermaid
+sequenceDiagram
+    participant Local as Local Machine
+    participant Ingress as k3s-ingress
+    participant Server as k3s-server
+
+    Note over Local,Ingress: Terminal 1: Start Tunnel
+    Local->>Ingress: ssh -N -L 16443:10.0.2.10:6443
+    Ingress->>Server: Forward to :6443
+
+    Note over Local: Terminal 2: Use kubectl
+    Local->>Local: kubectl --server=localhost:16443
+    Local->>Ingress: Request via tunnel :16443
+    Ingress->>Server: Forward to :6443
+    Server->>Ingress: Response
+    Ingress->>Local: Response
+```
 
 ### Start SSH Tunnel
 

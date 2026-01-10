@@ -2,9 +2,45 @@
 title: Common Issues
 ---
 
+```mermaid
+flowchart TB
+    subgraph Issues["Common Issues"]
+        OOC[Out of Capacity]
+        ARM[ARM64 Images]
+        FW[Firewall Blocking]
+        DNS[DNS Not Resolving]
+    end
+
+    subgraph Solutions["Solutions"]
+        AD[Change Availability Domain]
+        Multi[Multi-arch Build]
+        IPT[iptables -P ACCEPT]
+        Annot[Add DNS Annotation]
+    end
+
+    OOC --> AD
+    ARM --> Multi
+    FW --> IPT
+    DNS --> Annot
+```
+
 ## Out of Capacity
 
 Ampere A1 instances are frequently unavailable in popular regions.
+
+```mermaid
+flowchart LR
+    subgraph Problem
+        OCI[OCI API] -->|Out of Capacity| Fail[Provisioning Failed]
+    end
+
+    subgraph Solution
+        AD0[AD-0] -.->|try| OCI2[OCI API]
+        AD1[AD-1] -.->|try| OCI2
+        AD2[AD-2] -.->|try| OCI2
+        OCI2 --> Success[Provisioning OK]
+    end
+```
 
 Try changing the `availability_domain` index in `compute.tf` to 0, 1, or 2.
 
@@ -31,6 +67,19 @@ See [Accessing the Cluster](/operation/accessing-cluster/) for complete instruct
 ## Firewall Blocking CNI Traffic
 
 OCI Ubuntu images have strict iptables rules that block Flannel VXLAN traffic.
+
+```mermaid
+flowchart LR
+    subgraph Before["Before Fix"]
+        Pod1[Pod A] -->|VXLAN| FW[iptables<br/>DROP]
+        FW -.->|Blocked| Pod2[Pod B]
+    end
+
+    subgraph After["After Fix"]
+        Pod3[Pod A] -->|VXLAN| FW2[iptables<br/>ACCEPT]
+        FW2 --> Pod4[Pod B]
+    end
+```
 
 Symptom: Pods cannot resolve DNS with `i/o timeout` errors.
 

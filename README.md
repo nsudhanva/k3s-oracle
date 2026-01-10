@@ -2,6 +2,34 @@
 
 A production-ready K3s cluster on Oracle Cloud Infrastructure using Always Free tier resources. This project provisions infrastructure with Terraform, bootstraps Argo CD for GitOps, and deploys applications via Gateway API with automatic HTTPS.
 
+```mermaid
+graph TB
+    subgraph Internet
+        User((User))
+        CF[Cloudflare DNS]
+    end
+
+    subgraph OCI["Oracle Cloud (Always Free)"]
+        subgraph Public["Public Subnet"]
+            Ingress[k3s-ingress<br/>NAT + Envoy]
+        end
+        subgraph Private["Private Subnet"]
+            Server[k3s-server<br/>Control Plane]
+            Worker[k3s-worker<br/>Workloads]
+        end
+    end
+
+    subgraph GitHub
+        Repo[(Repository)]
+    end
+
+    User -->|HTTPS| CF
+    CF --> Ingress
+    Ingress --> Server
+    Ingress --> Worker
+    Repo -->|GitOps| Server
+```
+
 ## Architecture
 
 The cluster runs on three Ampere A1 ARM64 instances within OCI's Always Free limits (4 OCPUs, 24GB RAM total):
@@ -21,6 +49,36 @@ The cluster runs on three Ampere A1 ARM64 instances within OCI's Always Free lim
 | Envoy Gateway | Gateway API implementation |
 | External DNS | Automatic Cloudflare DNS updates |
 | Cert Manager | Let's Encrypt certificate automation |
+
+```mermaid
+flowchart LR
+    subgraph Infra["Infrastructure"]
+        TF[Terraform]
+    end
+
+    subgraph Cluster["K3s Cluster"]
+        Argo[Argo CD]
+        EG[Envoy Gateway]
+        CM[Cert Manager]
+        ED[External DNS]
+    end
+
+    subgraph External["External Services"]
+        OCI[(OCI)]
+        GH[(GitHub)]
+        CFl[(Cloudflare)]
+        LE[(Let's Encrypt)]
+    end
+
+    TF -->|provisions| OCI
+    TF -->|generates| GH
+    GH -->|syncs| Argo
+    Argo -->|deploys| EG
+    Argo -->|deploys| CM
+    Argo -->|deploys| ED
+    CM -->|certificates| LE
+    ED -->|DNS records| CFl
+```
 
 ## Prerequisites
 

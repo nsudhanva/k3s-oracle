@@ -13,6 +13,7 @@
     "@astrojs/check": "^0.9.6",
     "@astrojs/starlight": "^0.37.1",
     "astro": "^5.5.0",
+    "astro-mermaid": "^1.2.0",
     "typescript": "^5.9.3"
   }
 }

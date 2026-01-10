@@ -8,6 +8,13 @@ This cluster exposes applications to the internet without using a cloud load bal
 
 In a typical cloud Kubernetes deployment:
 
+```mermaid
+flowchart LR
+    User((User)) --> LB[Cloud Load Balancer<br/>$$$/month]
+    LB --> NP[NodePort Service<br/>:30000-32767]
+    NP --> Pod[Application Pod]
+```
+
 1. A cloud load balancer receives traffic on ports 80/443
 2. The load balancer forwards traffic to NodePort services
 3. Kubernetes routes traffic to the appropriate pods
@@ -17,6 +24,17 @@ This requires a paid load balancer resource.
 ## This Cluster's Approach
 
 This cluster binds the ingress controller directly to the host network interface:
+
+```mermaid
+flowchart LR
+    User((User)) --> DNS[Cloudflare DNS]
+    DNS --> Ingress[Ingress Node<br/>hostPort :80/:443]
+    Ingress --> Envoy[Envoy Pod]
+    Envoy --> Pod[Application Pod]
+
+    style Ingress fill:#90EE90
+    style DNS fill:#87CEEB
+```
 
 1. DNS points directly to the ingress node's public IP
 2. Envoy Gateway binds ports 80/443 on the host
@@ -63,29 +81,58 @@ The ingress node is labeled during K3s installation with `--node-label role=ingr
 
 ### Traffic Flow
 
-```text
-Internet
-    |
-    v
-DNS (k3s.example.com -> 132.226.43.62)
-    |
-    v
-Ingress Node Public IP (132.226.43.62:443)
-    |
-    v
-Envoy Container (hostPort 443)
-    |
-    v
-Gateway API HTTPRoute
-    |
-    v
-Backend Service (ClusterIP)
-    |
-    v
-Application Pod
+```mermaid
+flowchart TB
+    subgraph Internet
+        User((User))
+        DNS[DNS: k3s.example.com<br/>→ 132.226.43.62]
+    end
+
+    subgraph Ingress["Ingress Node (132.226.43.62)"]
+        HP[hostPort :443]
+        Envoy[Envoy Container]
+    end
+
+    subgraph Cluster["K3s Cluster Network"]
+        GW[Gateway API<br/>public-gateway]
+        HR[HTTPRoute]
+        SVC[Backend Service<br/>ClusterIP]
+        Pod[Application Pod]
+    end
+
+    User -->|HTTPS| DNS
+    DNS -->|TCP :443| HP
+    HP --> Envoy
+    Envoy --> GW
+    GW --> HR
+    HR --> SVC
+    SVC --> Pod
 ```
 
 ## Why hostPort Instead of hostNetwork
+
+```mermaid
+flowchart TB
+    subgraph HostNetwork["hostNetwork: true ❌"]
+        HN_Pod[Pod]
+        HN_Host[Host Network Namespace]
+        HN_DNS[/etc/resolv.conf<br/>Host DNS]
+        HN_Pod --> HN_Host
+        HN_Host --> HN_DNS
+        HN_DNS -.->|Cannot resolve| K8S_SVC[kubernetes.default]
+    end
+
+    subgraph HostPort["hostPort ✓"]
+        HP_Pod[Pod]
+        HP_Cluster[Cluster Network Namespace]
+        HP_CoreDNS[CoreDNS]
+        HP_Ports[Host Ports :80/:443]
+        HP_Pod --> HP_Cluster
+        HP_Cluster --> HP_CoreDNS
+        HP_Pod -.-> HP_Ports
+        HP_CoreDNS -->|Resolves| K8S_SVC2[kubernetes.default]
+    end
+```
 
 Using `hostNetwork: true` would give the pod the host's network namespace. This causes DNS resolution issues because the host's `/etc/resolv.conf` does not know about Kubernetes services.
 
@@ -125,6 +172,31 @@ listeners:
 ## HTTPS Enforcement
 
 All HTTP traffic is redirected to HTTPS using a 301 permanent redirect. Each application has two HTTPRoutes:
+
+```mermaid
+flowchart LR
+    subgraph Request["User Request"]
+        HTTP[HTTP :80]
+        HTTPS[HTTPS :443]
+    end
+
+    subgraph Gateway["public-gateway"]
+        L80[http listener]
+        L443[https-* listener]
+    end
+
+    subgraph Routes["HTTPRoutes"]
+        Redirect[docs-redirect<br/>301 → HTTPS]
+        Main[docs-route<br/>Backend Service]
+    end
+
+    HTTP --> L80
+    L80 --> Redirect
+    Redirect -->|301 Redirect| HTTPS
+    HTTPS --> L443
+    L443 --> Main
+    Main --> App[Application]
+```
 
 1. A route attached to the HTTPS listener that serves traffic
 2. A redirect route attached to the HTTP listener

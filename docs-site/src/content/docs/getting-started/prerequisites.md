@@ -2,6 +2,32 @@
 title: Prerequisites
 ---
 
+```mermaid
+flowchart LR
+    subgraph Accounts["Cloud Accounts"]
+        OCI[OCI Account<br/>Always Free]
+        CF[Cloudflare<br/>DNS Zone]
+        GH[GitHub<br/>Repository]
+    end
+
+    subgraph Tools["Local Tools"]
+        TF[Terraform]
+        KU[kubectl]
+        SSH[SSH Client]
+    end
+
+    subgraph Cluster["K3s Cluster"]
+        K3s((Deployed<br/>Cluster))
+    end
+
+    OCI --> K3s
+    CF --> K3s
+    GH --> K3s
+    TF --> K3s
+    KU -.->|manage| K3s
+    SSH -.->|access| K3s
+```
+
 ## Cloud Accounts
 
 ### Oracle Cloud Infrastructure
