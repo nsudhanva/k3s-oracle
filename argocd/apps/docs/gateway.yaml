@@ -12,14 +12,13 @@ spec:
     allowedRoutes:
       namespaces:
         from: Same
-  # HTTPS listener temporarily removed - will re-add once cert is issued
-  # - name: websecure
-  #   port: 443
-  #   protocol: HTTPS
-  #   allowedRoutes:
-  #     namespaces:
-  #       from: Same
-  #   tls:
-  #     mode: Terminate
-  #     certificateRefs:
-  #     - name: docs-tls
+  - name: websecure
+    port: 443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: Same
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - name: docs-tls
