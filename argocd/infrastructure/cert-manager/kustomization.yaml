@@ -3,5 +3,3 @@ kind: Kustomization
 resources:
   # Official cert-manager install manifest with CRDs
   - https://github.com/cert-manager/cert-manager/releases/download/v1.16.3/cert-manager.yaml
-  # Custom ClusterIssuer (after CRDs from above)
-  - cluster-issuer.yaml

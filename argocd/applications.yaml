@@ -25,12 +25,39 @@ metadata:
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
   source:
     repoURL: https://github.com/nsudhanva/k3s-oracle.git
     targetRevision: HEAD
     path: argocd/infrastructure/cert-manager
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager-config
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/nsudhanva/k3s-oracle.git
+    targetRevision: HEAD
+    path: argocd/infrastructure/cert-manager-config
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager
@@ -83,6 +110,8 @@ spec:
       valuesObject:
         deployment:
           replicas: 1
+        service:
+          annotations: {}
         config:
           envoyGateway:
             gateway:
