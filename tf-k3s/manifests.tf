@@ -24,15 +24,48 @@ resource "local_file" "external_dns_kustomization" {
   })
 }
 
-resource "local_file" "traefik_kustomization" {
-  filename = "../argocd/infrastructure/traefik/kustomization.yaml"
-  content  = file("${path.module}/templates/manifests/traefik/kustomization.yaml")
+resource "local_file" "external_dns_rbac" {
+  for_each = fileset("${path.module}/templates/manifests/external-dns", "rbac*.yaml")
+  filename = "../argocd/infrastructure/external-dns/${each.value}"
+  content  = file("${path.module}/templates/manifests/external-dns/${each.value}")
 }
 
-resource "local_file" "nginx_manifests" {
-  for_each = fileset("${path.module}/templates/manifests/nginx", "*")
-  filename = "../argocd/apps/nginx/${each.value}"
-  content = templatefile("${path.module}/templates/manifests/nginx/${each.value}", {
+resource "local_file" "envoy_gateway_config" {
+  filename = "../argocd/infrastructure/envoy-gateway/config.yaml"
+  content  = file("${path.module}/templates/manifests/envoy-gateway/config.yaml")
+}
+
+resource "local_file" "envoy_gateway_kustomization" {
+  filename = "../argocd/infrastructure/envoy-gateway/kustomization.yaml"
+  content  = file("${path.module}/templates/manifests/envoy-gateway/kustomization.yaml")
+}
+
+resource "local_file" "envoy_gateway_static_dns" {
+  filename = "../argocd/infrastructure/envoy-gateway/static-dns.yaml"
+  content = templatefile("${path.module}/templates/manifests/envoy-gateway/static-dns.yaml.tpl", {
+    domain_name       = var.domain_name
+    ingress_public_ip = oci_core_instance.ingress.public_ip
+  })
+}
+
+resource "local_file" "argocd_ingress_manifests" {
+  filename = "../argocd/infrastructure/argocd-ingress/ingress.yaml"
+  content = templatefile("${path.module}/templates/manifests/argocd-ingress/ingress.yaml.tpl", {
     domain_name = var.domain_name
+  })
+}
+
+resource "local_file" "argocd_self_managed" {
+  filename = "../argocd/infrastructure/argocd/kustomization.yaml"
+  content  = file("${path.module}/templates/manifests/argocd/kustomization.yaml")
+}
+
+resource "local_file" "docs_manifests" {
+  for_each = fileset("${path.module}/templates/manifests/docs", "*")
+  filename = "../argocd/apps/docs/${each.value}"
+  content = templatefile("${path.module}/templates/manifests/docs/${each.value}", {
+    domain_name   = var.domain_name
+    git_username  = var.git_username
+    git_repo_name = var.git_repo_name
   })
 }

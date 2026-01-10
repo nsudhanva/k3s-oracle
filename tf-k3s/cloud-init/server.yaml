@@ -53,6 +53,47 @@ write_files:
           syncOptions:
             - CreateNamespace=true
 
+  # Private Git Repo Credentials for Argo CD
+  - path: /var/lib/rancher/k3s/server/manifests/argocd-repo-creds.yaml
+    owner: root:root
+    permissions: '0600'
+    content: |
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: repo-creds
+        namespace: argocd
+        labels:
+          argocd.argoproj.io/secret-type: repository
+      type: Opaque
+      stringData:
+        url: ${git_repo_url}
+        username: ${git_username}
+        password: ${git_pat}
+
+  # Registry Credentials for pulling images from GHCR (if private)
+  - path: /var/lib/rancher/k3s/server/manifests/regcred.yaml
+    owner: root:root
+    permissions: '0600'
+    content: |
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: regcred
+        namespace: default
+      type: kubernetes.io/dockerconfigjson
+      stringData:
+        .dockerconfigjson: |
+          {
+            "auths": {
+              "ghcr.io": {
+                "username": "${git_username}",
+                "password": "${git_pat}",
+                "auth": "${base64encode("${git_username}:${git_pat}")}"
+              }
+            }
+          }
+
   # Cloudflare API Token Secret (for Cert Manager/External DNS)
   - path: /var/lib/rancher/k3s/server/manifests/cloudflare-secret.yaml
     owner: root:root

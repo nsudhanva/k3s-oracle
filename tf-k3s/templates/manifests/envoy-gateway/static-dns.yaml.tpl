@@ -5,8 +5,8 @@ metadata:
   namespace: default
 spec:
   endpoints:
-  - dnsName: k3s.sudhanva.me
+  - dnsName: ${domain_name}
     recordTTL: 300
     recordType: A
     targets:
-    - 129.153.188.121
+    - ${ingress_public_ip}

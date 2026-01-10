@@ -106,6 +106,8 @@ resource "oci_core_instance" "server" {
       public_ip            = oci_core_instance.ingress.public_ip
       k3s_token            = var.k3s_token
       git_repo_url         = var.git_repo_url
+      git_pat              = var.git_pat
+      git_username         = var.git_username
       cloudflare_api_token = var.cloudflare_api_token
     }))
   }

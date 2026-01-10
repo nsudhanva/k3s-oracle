@@ -1,11 +1,11 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: nginx-route
+  name: docs-route
   namespace: default
 spec:
   parentRefs:
-  - name: nginx-gateway
+  - name: docs-gateway
   hostnames:
   - "${domain_name}"
   rules:
@@ -14,16 +14,16 @@ spec:
         type: PathPrefix
         value: /
     backendRefs:
-    - name: nginx
+    - name: docs
       port: 80
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: nginx-tls
+  name: docs-tls
   namespace: default
 spec:
-  secretName: nginx-tls
+  secretName: docs-tls
   issuerRef:
     name: cloudflare-issuer
     kind: ClusterIssuer

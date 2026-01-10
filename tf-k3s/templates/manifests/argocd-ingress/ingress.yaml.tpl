@@ -8,7 +8,7 @@ spec:
   - name: argocd-gateway
     namespace: argocd
   hostnames:
-  - "cd.sudhanva.me"
+  - "cd.${domain_name}"
   rules:
   - matches:
     - path:
@@ -54,6 +54,6 @@ spec:
     name: cloudflare-issuer
     kind: ClusterIssuer
     group: cert-manager.io
-  commonName: "cd.sudhanva.me"
+  commonName: "cd.${domain_name}"
   dnsNames:
-  - "cd.sudhanva.me"
+  - "cd.${domain_name}"

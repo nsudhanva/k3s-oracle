@@ -26,6 +26,21 @@ variable "domain_name" {}
 
 variable "git_repo_url" {}
 
+variable "git_pat" {
+  description = "GitHub Personal Access Token for cloning the private repository."
+  sensitive   = true
+}
+
+variable "git_username" {
+  description = "GitHub Username for the PAT."
+  default     = "git"
+}
+
+variable "git_repo_name" {
+  description = "The repository name (e.g. k3s-oracle) to construct GHCR image paths."
+  default     = "k3s-oracle"
+}
+
 variable "k3s_token" {
   description = "Shared secret for K3s. If empty, one creates automatically (but passing via var is safer for consistency)."
   default     = "k3s-secret-token-change-me"
