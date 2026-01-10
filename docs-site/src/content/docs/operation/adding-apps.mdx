@@ -1,0 +1,243 @@
+---
+title: Adding New Applications
+description: How to deploy new applications using GitOps and ArgoCD
+---
+
+import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+
+This guide explains how to add new applications to the cluster using the GitOps workflow.
+
+## Application Structure
+
+All applications are managed through ArgoCD using the App of Apps pattern:
+
+```
+argocd/
+├── applications.yaml      # Root app that manages all others
+├── apps/                  # Your applications
+│   └── docs/             # Example: docs app
+│       ├── deployment.yaml
+│       ├── service.yaml
+│       ├── gateway.yaml
+│       └── httproute.yaml
+└── infrastructure/        # Cluster infrastructure
+    ├── argocd/
+    ├── cert-manager/
+    ├── envoy-gateway/
+    ├── external-dns/
+    └── external-secrets/
+```
+
+## Adding a New Application
+
+<Steps>
+1. **Create application directory**
+   ```bash
+   mkdir -p argocd/apps/my-app
+   ```
+
+2. **Create Kubernetes manifests**
+   
+   At minimum, you need:
+   - `deployment.yaml` - Your application pods
+   - `service.yaml` - Internal service
+   - `httproute.yaml` - External HTTP routing (optional)
+
+3. **Add to applications.yaml**
+   
+   Add a new Application resource:
+   ```yaml
+   ---
+   apiVersion: argoproj.io/v1alpha1
+   kind: Application
+   metadata:
+     name: my-app
+     namespace: argocd
+     finalizers:
+       - resources-finalizer.argocd.argoproj.io
+   spec:
+     project: default
+     source:
+       repoURL: https://github.com/nsudhanva/k3s-oracle.git
+       targetRevision: HEAD
+       path: argocd/apps/my-app
+     destination:
+       server: https://kubernetes.default.svc
+       namespace: my-app
+     syncPolicy:
+       automated:
+         prune: true
+         selfHeal: true
+       syncOptions:
+         - CreateNamespace=true
+   ```
+
+4. **Commit and push**
+   ```bash
+   git add argocd/apps/my-app argocd/applications.yaml
+   git commit -m "feat: Add my-app"
+   git push
+   ```
+
+5. **Verify in ArgoCD**
+   
+   ArgoCD will automatically sync within ~3 minutes, or force sync:
+   ```bash
+   argocd app sync my-app
+   ```
+</Steps>
+
+## Example: Web Application with HTTPS
+
+### deployment.yaml
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+        - name: my-app
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+```
+
+### service.yaml
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app
+spec:
+  selector:
+    app: my-app
+  ports:
+    - port: 80
+      targetPort: 80
+```
+
+### httproute.yaml
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: my-app-route
+spec:
+  parentRefs:
+    - name: public-gateway
+      namespace: default
+  hostnames:
+    - "my-app.k3s.sudhanva.me"
+  rules:
+    - backendRefs:
+        - name: my-app
+          port: 80
+```
+
+<Aside type="note">
+  The `public-gateway` in the `default` namespace handles TLS termination. External DNS will automatically create DNS records for hostnames in HTTPRoutes.
+</Aside>
+
+## Using Private Container Images
+
+If your app uses a private container registry (like GHCR):
+
+```yaml
+spec:
+  template:
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: my-app
+          image: ghcr.io/your-username/my-app:latest
+```
+
+The `regcred` secret is created during cluster bootstrap with GitHub credentials.
+
+## Application with Secrets
+
+For applications that need secrets from OCI Vault, use External Secrets Operator:
+
+### externalsecret.yaml
+
+```yaml
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: my-app-secrets
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: oci-vault
+    kind: ClusterSecretStore
+  target:
+    name: my-app-secrets
+  data:
+    - secretKey: API_KEY
+      remoteRef:
+        key: my-app-api-key
+```
+
+<Aside type="caution">
+  You must first configure the ClusterSecretStore for OCI Vault. See [Secrets Management](/architecture/secrets-management).
+</Aside>
+
+## Monitoring Deployments
+
+### Check ArgoCD Status
+
+```bash
+# Via kubectl
+ssh -J ubuntu@132.226.43.62 ubuntu@10.0.2.10 \
+  "sudo kubectl get applications -n argocd"
+
+# Via ArgoCD CLI
+argocd app list
+argocd app get my-app
+```
+
+### Check Pod Status
+
+```bash
+ssh -J ubuntu@132.226.43.62 ubuntu@10.0.2.10 \
+  "sudo kubectl get pods -n my-app"
+```
+
+### View Logs
+
+```bash
+ssh -J ubuntu@132.226.43.62 ubuntu@10.0.2.10 \
+  "sudo kubectl logs -n my-app -l app=my-app"
+```
+
+## Resource Limits
+
+The cluster runs on OCI Always Free tier with limited resources. Keep resource requests minimal:
+
+| Resource | Recommended Request | Limit |
+|----------|---------------------|-------|
+| CPU | 10m - 50m | 100m - 200m |
+| Memory | 32Mi - 64Mi | 128Mi - 256Mi |
+
+Total cluster capacity: **4 OCPUs, 24 GB RAM** (shared across all workloads).
