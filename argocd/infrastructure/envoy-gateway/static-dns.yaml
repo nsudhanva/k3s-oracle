@@ -1,0 +1,12 @@
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: k3s-ingress-dns
+  namespace: external-dns
+spec:
+  endpoints:
+  - dnsName: k3s.sudhanva.me
+    recordTTL: 300
+    recordType: A
+    targets:
+    - 129.80.56.234

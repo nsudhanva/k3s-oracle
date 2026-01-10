@@ -1,0 +1,24 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: external-secrets
+  namespace: kube-system
+spec:
+  chart: external-secrets
+  repo: https://charts.external-secrets.io
+  targetNamespace: external-secrets
+  createNamespace: true
+  version: 1.2.1
+  valuesContent: |-
+    installCRDs: true
+    webhook:
+      port: 9443
+    serviceMonitor:
+      enabled: false
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
