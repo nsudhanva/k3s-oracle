@@ -4,13 +4,13 @@ metadata:
   name: cloudflare-issuer
 spec:
   acme:
-    email: hello@sudhanva.me
+    email: sudhanva@sudhanva.me
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
-      name: cloudflare-issuer-account-key
+      name: letsencrypt-prod
     solvers:
-      - dns01:
-          cloudflare:
-            apiTokenSecretRef:
-              name: cloudflare-api-token-secret
-              key: api-token
+    - dns01:
+        cloudflare:
+          apiTokenSecretRef:
+            name: cloudflare-api-token-secret
+            key: api-token
