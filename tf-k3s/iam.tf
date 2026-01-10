@@ -2,7 +2,7 @@ resource "oci_identity_dynamic_group" "k3s_nodes" {
   compartment_id = var.tenancy_ocid
   name           = "k3s-nodes-dg"
   description    = "Dynamic group for K3s nodes to access OCI Vault"
-  matching_rule  = "tag.Project.value = 'k3s-oracle-free'"
+  matching_rule  = "ALL {instance.compartment.id = '${var.compartment_ocid}'}"
 }
 
 resource "oci_identity_policy" "k3s_secrets_policy" {
