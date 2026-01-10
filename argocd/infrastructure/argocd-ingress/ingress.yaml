@@ -58,3 +58,18 @@ spec:
   commonName: "cd.k3s.sudhanva.me"
   dnsNames:
   - "cd.k3s.sudhanva.me"
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-gateway-to-argocd-tls
+  namespace: argocd
+spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    namespace: default
+  to:
+  - group: ""
+    kind: Secret
+    name: argocd-tls
