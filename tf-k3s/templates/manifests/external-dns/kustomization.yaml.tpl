@@ -22,12 +22,10 @@ helmCharts:
         - sudhanva.me
       zoneIdFilter:
         - 293c1768d72a5378bbdb4d59fc8e8bfc
-      sources:
-        - ingress
-        - gateway-httproute
-        - crd
-      rbac:
-        create: true
+                        sources:
+                          - ingress
+                          - crd
+                        rbac:        create: true
         extraRules:
           - apiGroups: ["gateway.networking.k8s.io"]
             resources: ["gateways","httproutes","grpcroutes","tlsroutes","tcproutes","udproutes","gatewayclasses"]
