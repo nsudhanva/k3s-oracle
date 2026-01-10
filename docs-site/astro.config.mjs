@@ -21,6 +21,7 @@ export default defineConfig({
           label: 'Architecture',
           items: [
             { label: 'Overview', link: '/architecture/overview' },
+            { label: 'Free Tier Design', link: '/architecture/free-tier-design' },
             { label: 'Networking', link: '/architecture/networking' },
             { label: 'GitOps', link: '/architecture/gitops' },
           ],
