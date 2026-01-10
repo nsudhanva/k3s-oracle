@@ -74,3 +74,18 @@ OCI Metadata requires OpenSSH formatted public keys (`ssh-rsa ...`), not PEM for
 Docker Hub often rate-limits or blocks OCI artifact requests (`oci://`) from Cloud IPs without authentication (`401 Unauthorized`).
 
 - **Fix**: Use the Git-based installation method instead of Helm OCI for Envoy Gateway. The `kustomization.yaml` should point to the raw `install.yaml` from the GitHub release.
+
+## 9. External DNS & Cloudflare Zone ID
+
+If your Cloudflare API Token is scoped to specific zones, `external-dns` (and `cert-manager`) might fail to discover the Zone ID automatically.
+
+- **Error**: `Could not route to /client/v4/zones//dns_records...` (empty zone ID).
+- **Fix**: Explicitly provide the Zone ID in the configuration.
+  - For `external-dns`: Use `--zone-id-filter=<zone-id>`.
+  - For `cert-manager`: Ensure the Token has `Zone:Read` permission or use an API Key (Global) if discovery fails persistently.
+
+## 10. Gateway API & External DNS
+
+External DNS might not pick up `HTTPRoute` targets automatically if the Gateway status address is internal.
+
+- **Fix**: Add the annotation `external-dns.alpha.kubernetes.io/target: <public-ip>` to the `HTTPRoute` or `Gateway`.
