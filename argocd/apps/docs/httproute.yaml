@@ -7,8 +7,8 @@ metadata:
     external-dns.alpha.kubernetes.io/target: "132.226.43.62"
 spec:
   parentRefs:
-  - name: docs-gateway
-    sectionName: websecure
+  - name: public-gateway
+    sectionName: https-docs
   hostnames:
   - "k3s.sudhanva.me"
   rules:
@@ -27,8 +27,8 @@ metadata:
   namespace: default
 spec:
   parentRefs:
-  - name: docs-gateway
-    sectionName: web
+  - name: public-gateway
+    sectionName: http
   hostnames:
   - "k3s.sudhanva.me"
   rules:

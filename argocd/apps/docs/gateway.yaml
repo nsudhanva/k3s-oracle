@@ -1,24 +1,37 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: docs-gateway
+  name: public-gateway
   namespace: default
 spec:
   gatewayClassName: eg
   listeners:
-  - name: web
+  - name: http
     port: 80
     protocol: HTTP
     allowedRoutes:
       namespaces:
-        from: Same
-  - name: websecure
+        from: All
+  - name: https-docs
     port: 443
     protocol: HTTPS
+    hostname: "k3s.sudhanva.me"
     allowedRoutes:
       namespaces:
-        from: Same
+        from: All
     tls:
       mode: Terminate
       certificateRefs:
       - name: docs-tls
+  - name: https-argocd
+    port: 443
+    protocol: HTTPS
+    hostname: "cd.k3s.sudhanva.me"
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - name: argocd-tls
+        namespace: argocd
