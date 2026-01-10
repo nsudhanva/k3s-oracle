@@ -1,10 +1,11 @@
 # Stage 1: Build the site
-FROM node:20-alpine AS builder
+FROM oven/bun:1 AS builder
 WORKDIR /app
 COPY package.json .
-RUN npm install
+COPY bun.lockb .
+RUN bun install
 COPY . .
-RUN npm run build
+RUN bun run build
 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
