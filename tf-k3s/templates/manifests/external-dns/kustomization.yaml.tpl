@@ -3,7 +3,6 @@ kind: Kustomization
 
 resources:
   - crd.yaml
-  - rbac.yaml
 
 helmCharts:
   - name: external-dns
@@ -21,3 +20,19 @@ helmCharts:
               key: api-token
       domainFilters:
         - ${domain_name}
+      sources:
+        - ingress
+        - gateway-httproute
+        - crd
+      rbac:
+        create: true
+        extraRules:
+          - apiGroups: ["gateway.networking.k8s.io"]
+            resources: ["gateways","httproutes","grpcroutes","tlsroutes","tcproutes","udproutes","gatewayclasses"]
+            verbs: ["get","watch","list"]
+          - apiGroups: ["externaldns.k8s.io"]
+            resources: ["dnsendpoints"]
+            verbs: ["get","watch","list"]
+          - apiGroups: ["externaldns.k8s.io"]
+            resources: ["dnsendpoints/status"]
+            verbs: ["update"]
