@@ -19,7 +19,9 @@ helmCharts:
               name: cloudflare-api-token-secret
               key: api-token
       domainFilters:
-        - ${domain_name}
+        - sudhanva.me
+      zoneIdFilter:
+        - 293c1768d72a5378bbdb4d59fc8e8bfc
       sources:
         - ingress
         - gateway-httproute
