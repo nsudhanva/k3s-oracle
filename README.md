@@ -81,14 +81,19 @@ flowchart LR
         GH[(GitHub)]
         CFl[(Cloudflare)]
         LE[(Let's Encrypt)]
+        Vault[(OCI Vault)]
     end
 
     TF -->|provisions| OCI
+    TF -->|provisions| Vault
     TF -->|generates| GH
     GH -->|syncs| Argo
     Argo -->|deploys| EG
     Argo -->|deploys| CM
     Argo -->|deploys| ED
+    Argo -->|applies| ES[ExternalSecret]
+    Vault -->|syncs to| ES
+    ES -->|creates| Secret[K8s Secret]
     CM -->|certificates| LE
     ED -->|DNS records| CFl
 ```
