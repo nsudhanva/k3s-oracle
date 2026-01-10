@@ -68,6 +68,16 @@ resource "oci_core_security_list" "public_sl" {
     }
   }
 
+  # Allow Kubernetes NodePort range
+  ingress_security_rules {
+    protocol = "6"
+    source   = "0.0.0.0/0"
+    tcp_options {
+      min = 30000
+      max = 32767
+    }
+  }
+
   # Allow internal VCN traffic
   ingress_security_rules {
     protocol = "all"

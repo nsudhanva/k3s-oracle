@@ -25,39 +25,12 @@ metadata:
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
   source:
     repoURL: https://github.com/nsudhanva/k3s-oracle.git
     targetRevision: HEAD
     path: argocd/infrastructure/cert-manager
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: cert-manager
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
----
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: cert-manager-config
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "2"
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/nsudhanva/k3s-oracle.git
-    targetRevision: HEAD
-    path: argocd/infrastructure/cert-manager-config
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager
@@ -78,24 +51,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://kubernetes-sigs.github.io/external-dns/
-    chart: external-dns
-    targetRevision: 1.15.0
-    helm:
-      valuesObject:
-        provider:
-          name: cloudflare
-        env:
-          - name: CF_API_TOKEN
-            valueFrom:
-              secretKeyRef:
-                name: cloudflare-api-token-secret
-                key: api-token
-        domainFilters:
-          - k3s.sudhanva.me
-        sources:
-          - ingress
-          - gateway-httproute
+    repoURL: https://github.com/nsudhanva/k3s-oracle.git
+    targetRevision: HEAD
+    path: argocd/infrastructure/external-dns
   destination:
     server: https://kubernetes.default.svc
     namespace: external-dns
@@ -118,6 +76,39 @@ metadata:
 spec:
   project: default
   source:
+    repoURL: oci://docker.io/envoyproxy
+    chart: gateway-helm
+    targetRevision: v1.6.1
+    helm:
+      valuesObject:
+        deployment:
+          replicas: 1
+        config:
+          envoyGateway:
+            gateway:
+              controllerName: gateway.envoyproxy.io/gatewayclass-controller
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: envoy-gateway-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: envoy-gateway-config
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  source:
     repoURL: https://github.com/nsudhanva/k3s-oracle.git
     targetRevision: HEAD
     path: argocd/infrastructure/envoy-gateway
@@ -130,7 +121,6 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - ServerSideApply=true
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
