@@ -27,3 +27,14 @@ bun.lockb
 **/*.tfvars
 **/*.tfvars.json
 **/.terraform/
+
+# Terraform-generated ArgoCD manifests (contain environment-specific values)
+argocd/applications.yaml
+argocd/apps/
+argocd/infrastructure/argocd/
+argocd/infrastructure/argocd-ingress/
+argocd/infrastructure/cert-manager/
+argocd/infrastructure/envoy-gateway/
+argocd/infrastructure/external-dns/
+argocd/infrastructure/external-secrets/
+argocd/infrastructure/managed-secrets/

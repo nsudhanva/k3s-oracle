@@ -4,4 +4,3 @@ metadata:
   name: external-secrets
   labels:
     app.kubernetes.io/name: external-secrets
-    app.kubernetes.io/component: secrets-management

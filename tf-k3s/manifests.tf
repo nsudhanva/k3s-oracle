@@ -70,3 +70,27 @@ resource "local_file" "docs_manifests" {
     ingress_public_ip = oci_core_instance.ingress.public_ip
   })
 }
+
+# External Secrets Operator Helm release
+resource "local_file" "external_secrets_manifests" {
+  for_each = fileset("${path.module}/templates/manifests/external-secrets", "*")
+  filename = "../argocd/infrastructure/external-secrets/${each.value}"
+  content  = file("${path.module}/templates/manifests/external-secrets/${each.value}")
+}
+
+# Managed Secrets (ClusterSecretStore + ExternalSecrets) - templated with sensitive values
+resource "local_file" "managed_secrets_kustomization" {
+  filename = "../argocd/infrastructure/managed-secrets/kustomization.yaml"
+  content  = file("${path.module}/templates/manifests/managed-secrets/kustomization.yaml")
+}
+
+resource "local_file" "managed_secrets_secrets" {
+  filename = "../argocd/infrastructure/managed-secrets/secrets.yaml"
+  content = templatefile("${path.module}/templates/manifests/managed-secrets/secrets.yaml.tpl", {
+    vault_ocid   = oci_kms_vault.k3s_vault.id
+    oci_region   = var.region
+    git_username = var.git_username
+    git_email    = var.git_email
+    git_repo_url = var.git_repo_url
+  })
+}

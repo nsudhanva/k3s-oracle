@@ -65,3 +65,8 @@ variable "argocd_admin_password" {
   description = "ArgoCD admin password to store in OCI Vault"
   sensitive   = true
 }
+
+variable "git_email" {
+  description = "Email address for GitHub container registry authentication"
+  type        = string
+}

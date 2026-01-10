@@ -5,8 +5,8 @@ metadata:
 spec:
   provider:
     oracle:
-      vault: ocid1.vault.oc1.iad.ejuwe6j5aafdy.abuwcljt6kpau7djplk3n2oimtebiyjair26ygkcesveuolrmhwysjtxqjeq
-      region: us-ashburn-1
+      vault: ${vault_ocid}
+      region: ${oci_region}
       principalType: InstancePrincipal
 ---
 apiVersion: external-secrets.io/v1
@@ -29,10 +29,10 @@ spec:
           {
             "auths": {
               "ghcr.io": {
-                "username": "nsudhanva",
+                "username": "${git_username}",
                 "password": "{{ .github_pat }}",
-                "email": "nsudhanva@gmail.com",
-                "auth": "{{ printf "nsudhanva:%s" .github_pat | b64enc }}"
+                "email": "${git_email}",
+                "auth": "{{ printf \"${git_username}:%s\" .github_pat | b64enc }}"
               }
             }
           }
@@ -59,8 +59,8 @@ spec:
         labels:
           argocd.argoproj.io/secret-type: repository
       data:
-        url: "https://github.com/nsudhanva/k3s-oracle.git"
-        username: "nsudhanva"
+        url: "${git_repo_url}"
+        username: "${git_username}"
         password: "{{ .github_pat }}"
   data:
     - secretKey: github_pat
