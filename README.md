@@ -25,11 +25,13 @@ This project sets up a High Availability (sort of) K3s cluster on Oracle Cloud I
 ## Setup Instructions
 
 ### 1. Prepare Credentials
+
 - Ensure you have your OCI API Key (`.pem`) and config details.
 - Have your OCI SSH Public Key ready (e.g. `~/.oci/oci_api_key_public.pem`).
 - Create a GitHub Personal Access Token (Classic) with `repo` and `read:packages` scopes.
 
 ### 2. Configure Terraform
+
 Create a `terraform.tfvars` file in `tf-k3s/` directory with your details:
 
 ```hcl
@@ -52,6 +54,7 @@ git_username         = "your-github-username"
 ```
 
 ### 3. Generate Manifests & Infrastructure
+
 Run Terraform to create the infrastructure and generate the GitOps manifests locally.
 
 ```bash
@@ -61,11 +64,13 @@ terraform apply -auto-approve
 ```
 
 This will:
+
 1. Provision OCI Networking and Instances.
 2. Generate Kubernetes manifests in `argocd/` directory.
 3. Bootstrap K3s (wait a few minutes for cloud-init).
 
 ### 4. Push to Git (Crucial Step)
+
 Terraform generates the specific manifests for your domain and environment. You MUST push them to your repository so Argo CD can see them.
 
 ```bash
@@ -76,6 +81,7 @@ git push
 ```
 
 ### 5. Verify Installation
+
 Get the Kubeconfig command from Terraform outputs (or use the displayed SSH command):
 
 ```bash
@@ -83,13 +89,16 @@ terraform output kubeconfig_command
 ```
 
 Check Argo CD status:
+
 ```bash
 # Connect via Jump Host
 ssh -J ubuntu@<ingress-ip> ubuntu@10.0.2.10 "sudo kubectl get applications -n argocd"
 ```
+
 You should see `root-app` and child apps syncing. Note that `envoy-gateway` and `external-dns` might take a moment to stabilize.
 
 ### 6. Access Application
+
 Visit `https://k3s.example.com` (your configured domain).
 It should load the documentation site, secured with a valid Let's Encrypt certificate.
 

@@ -42,6 +42,7 @@ OCI Ubuntu images have strict `iptables` that can block Flannel VXLAN (UDP 8472)
 
 - **Symptom**: Pods cannot resolve DNS (`i/o timeout` lookup `kubernetes.default`).
 - **Fix**: Flush default rules. Cloud-init handles this, but if it fails:
+
   ```bash
   sudo iptables -P INPUT ACCEPT
   sudo iptables -P FORWARD ACCEPT
@@ -55,6 +56,7 @@ When using Kustomize to inflate Helm Charts (like `cert-manager`), Argo CD requi
 
 - **Error**: `must specify --enable-helm`.
 - **Fix**: Patch `argocd-cm` ConfigMap in the `argocd-self-managed` application.
+
   ```yaml
   data:
     kustomize.buildOptions: "--enable-helm"
@@ -65,6 +67,7 @@ When using Kustomize to inflate Helm Charts (like `cert-manager`), Argo CD requi
 OCI Metadata requires OpenSSH formatted public keys (`ssh-rsa ...`), not PEM format (`-----BEGIN...`).
 
 - **Fix**: Convert PEM keys before using in Terraform.
+
   ```bash
   ssh-keygen -y -f ~/.oci/oci_api_key.pem > oci_key.pub
   ```

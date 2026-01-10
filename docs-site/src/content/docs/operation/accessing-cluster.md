@@ -14,6 +14,7 @@ terraform output
 ```
 
 This will show you:
+
 - `ingress_public_ip` - Public IP of the ingress/bastion node
 - `server_private_ip` - Private IP of the K3s server (usually `10.0.2.10`)
 - `worker_private_ip` - Private IP of the worker node
@@ -23,16 +24,19 @@ This will show you:
 To SSH into the nodes:
 
 1. **Ingress Node** (Public):
+
    ```bash
    ssh -i /path/to/key.pem ubuntu@<ingress-public-ip>
    ```
 
 2. **Server Node** (Private) via Jump Host:
+
    ```bash
    ssh -i /path/to/key.pem -J ubuntu@<ingress-public-ip> ubuntu@10.0.2.10
    ```
 
 3. **Worker Node** (Private) via Jump Host:
+
    ```bash
    ssh -i /path/to/key.pem -J ubuntu@<ingress-public-ip> ubuntu@<worker-private-ip>
    ```
@@ -94,6 +98,7 @@ kubectl get nodes
 ```
 
 Expected output:
+
 ```
 NAME       STATUS   ROLES           AGE   VERSION
 ingress    Ready    <none>          1h    v1.34.3+k3s1
@@ -131,6 +136,7 @@ Argo CD manages all deployments on the cluster. If the `argocd-ingress` applicat
 ### Option 1: Via Public Ingress (if configured)
 
 If your Argo CD ingress is set up, visit:
+
 ```
 https://cd.<your-domain>
 ```
@@ -140,6 +146,7 @@ https://cd.<your-domain>
 If not exposed publicly, use port forwarding:
 
 1. **Start Port Forward**:
+
    ```bash
    ssh -L 8080:localhost:8080 -J ubuntu@<ingress-public-ip> ubuntu@10.0.2.10 \
    "sudo kubectl port-forward svc/argocd-server -n argocd 8080:443"
@@ -152,11 +159,13 @@ If not exposed publicly, use port forwarding:
 
 - **Username**: `admin`
 - **Password**: Retrieve from the cluster:
+
   ```bash
   kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
   ```
 
   Or via SSH:
+
   ```bash
   ssh -J ubuntu@<ingress-public-ip> ubuntu@10.0.2.10 \
   "sudo kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
@@ -167,28 +176,33 @@ If not exposed publicly, use port forwarding:
 ### SSH Connection Issues
 
 **Host key verification failed:**
+
 ```bash
 # Remove old host keys if the cluster was recreated
 ssh-keygen -R <ingress-public-ip>
 ```
 
 **Connection timeout:**
+
 - Verify the ingress node is running in OCI Console
 - Check security list rules allow SSH (port 22) from your IP
 
 ### Kubectl Connection Issues
 
 **Connection refused on port 16443:**
+
 - Ensure the SSH tunnel is running in another terminal
 - Verify the tunnel command completed without errors
 
 **Certificate error:**
+
 - The kubeconfig contains embedded certificates
 - Re-fetch the kubeconfig if the cluster was rebuilt
 
 ### Tunnel Keeps Disconnecting
 
 For persistent tunnels, use autossh:
+
 ```bash
 # Install autossh (macOS)
 brew install autossh
@@ -198,6 +212,7 @@ autossh -M 0 -N -L 16443:10.0.2.10:6443 ubuntu@<ingress-public-ip>
 ```
 
 Or add SSH keep-alive options:
+
 ```bash
 ssh -N -L 16443:10.0.2.10:6443 -o ServerAliveInterval=60 -o ServerAliveCountMax=3 ubuntu@<ingress-public-ip>
 ```
