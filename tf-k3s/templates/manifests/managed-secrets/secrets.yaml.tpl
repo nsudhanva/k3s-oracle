@@ -66,3 +66,21 @@ spec:
     - secretKey: github_pat
       remoteRef:
         key: github-pat
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: argocd-admin-password-sync
+  namespace: argocd
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: oci-vault
+    kind: ClusterSecretStore
+  target:
+    name: argocd-initial-admin-secret
+    creationPolicy: Owner
+  data:
+    - secretKey: password
+      remoteRef:
+        key: argocd-admin-password
