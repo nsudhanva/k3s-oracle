@@ -25,7 +25,6 @@ helmCharts:
         - --zone-id-filter=293c1768d72a5378bbdb4d59fc8e8bfc
       sources:
         - crd
-        - gateway-httproute
       rbac:
         create: true
         extraRules:
