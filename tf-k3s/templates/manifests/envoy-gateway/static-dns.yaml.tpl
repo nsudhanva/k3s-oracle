@@ -10,8 +10,14 @@ spec:
     recordType: A
     targets:
     - ${ingress_public_ip}
+    providerSpecific:
+    - name: external-dns.alpha.kubernetes.io/cloudflare-proxied
+      value: "true"
   - dnsName: cd.${domain_name}
     recordTTL: 300
     recordType: A
     targets:
     - ${ingress_public_ip}
+    providerSpecific:
+    - name: external-dns.alpha.kubernetes.io/cloudflare-proxied
+      value: "true"

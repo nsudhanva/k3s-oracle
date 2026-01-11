@@ -10,8 +10,14 @@ spec:
     recordType: A
     targets:
     - 141.148.81.80
+    providerSpecific:
+    - name: external-dns.alpha.kubernetes.io/cloudflare-proxied
+      value: "true"
   - dnsName: cd.k3s.sudhanva.me
     recordTTL: 300
     recordType: A
     targets:
     - 141.148.81.80
+    providerSpecific:
+    - name: external-dns.alpha.kubernetes.io/cloudflare-proxied
+      value: "true"
