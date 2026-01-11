@@ -78,9 +78,13 @@ spec:
     name: oci-vault
     kind: ClusterSecretStore
   target:
-    name: argocd-initial-admin-secret
-    creationPolicy: Owner
+    name: argocd-secret
+    creationPolicy: Merge
+    template:
+      data:
+        admin.password: "{{ .password_hash }}"
+        admin.passwordMtime: "{{ now | date \"2006-01-02T15:04:05Z\" }}"
   data:
-    - secretKey: password
+    - secretKey: password_hash
       remoteRef:
-        key: argocd-admin-password
+        key: argocd-admin-password-hash
