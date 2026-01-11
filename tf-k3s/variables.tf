@@ -107,6 +107,12 @@ variable "argocd_admin_password" {
   sensitive   = true
 }
 
+variable "argocd_admin_password_hash" {
+  description = "Bcrypt hash of ArgoCD admin password for argocd-secret"
+  type        = string
+  sensitive   = true
+}
+
 variable "git_email" {
   description = "Email address for GitHub container registry authentication"
   type        = string
