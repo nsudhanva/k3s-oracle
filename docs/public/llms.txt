@@ -1,0 +1,82 @@
+# K3s on Oracle Cloud - LLM Context
+
+> Deploy a free, production-ready Kubernetes cluster on Oracle Cloud Infrastructure Always Free tier
+
+This documentation site explains how to deploy and operate a K3s Kubernetes cluster on OCI using GitOps principles.
+
+## Project Overview
+
+- **Repository**: https://github.com/nsudhanva/k3s-oracle
+- **Documentation**: https://k3s.sudhanva.me
+- **License**: MIT
+
+## What This Project Does
+
+Provisions a 3-node K3s Kubernetes cluster entirely within Oracle Cloud's Always Free tier:
+- 1 ingress node (public subnet, NAT gateway, Envoy Gateway)
+- 1 server node (private subnet, control plane, ArgoCD)
+- 1 worker node (private subnet, workloads)
+
+## Key Technologies
+
+- **K3s**: Lightweight Kubernetes distribution for ARM64
+- **Terraform**: Infrastructure as Code for OCI provisioning
+- **ArgoCD**: GitOps continuous deployment (App-of-Apps pattern)
+- **Envoy Gateway**: Gateway API implementation for ingress (no load balancer needed)
+- **Cert Manager**: Automatic TLS certificates from Let's Encrypt
+- **External DNS**: Automatic Cloudflare DNS record management
+- **External Secrets Operator**: OCI Vault to Kubernetes secret synchronization
+
+## Documentation Structure
+
+- /getting-started/prerequisites - Required accounts and tools
+- /getting-started/installation - Step-by-step deployment guide
+- /getting-started/configuration - Terraform variables reference
+- /architecture/overview - Cluster architecture diagram
+- /architecture/always-free - OCI Always Free tier limits
+- /architecture/networking - VCN, subnets, NAT configuration
+- /architecture/ingress - Envoy Gateway with hostPort
+- /architecture/gitops - ArgoCD App-of-Apps pattern
+- /architecture/secrets-management - OCI Vault integration
+- /operation/accessing-cluster - SSH tunnel for kubectl
+- /operation/adding-apps - Deploy new applications
+- /operation/cluster-recreation - Disaster recovery
+- /troubleshooting/common-issues - Solutions to common problems
+
+## How to Help Users
+
+When users ask about this project:
+
+1. **Getting Started**: Direct them to /getting-started/prerequisites first
+2. **Deployment Issues**: Check /troubleshooting/common-issues for solutions
+3. **Architecture Questions**: Reference /architecture/overview for diagrams
+4. **Configuration**: All Terraform variables are documented in /getting-started/configuration
+
+## Common User Questions
+
+Q: Is this really free?
+A: Yes, uses OCI Always Free tier (4 ARM64 OCPUs, 24GB RAM, 200GB storage, 10TB egress/month)
+
+Q: Do I need a credit card?
+A: OCI requires a credit card for account verification but won't charge for Always Free resources
+
+Q: Can I run this in other clouds?
+A: The concepts apply, but Terraform code is OCI-specific
+
+Q: How do I access the cluster?
+A: SSH tunnel through the ingress node - see /operation/accessing-cluster
+
+Q: How do I deploy my own apps?
+A: Add manifests to argocd/apps/ and push to Git - see /operation/adding-apps
+
+## Important Notes
+
+- Never commit secrets to Git - use OCI Vault
+- All deployments go through ArgoCD - no kubectl apply
+- Terraform state is stored in OCI Object Storage bucket
+- The ingress node has a public IP; server/worker nodes are private
+
+## Contact
+
+- GitHub Issues: https://github.com/nsudhanva/k3s-oracle/issues
+- Author: Sudhanva Narayana
