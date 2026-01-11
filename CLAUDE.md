@@ -85,7 +85,7 @@ terraform apply tfplan
 
 ## Repository Structure
 
-```
+```text
 k3s-oracle/
 ├── tf-k3s/                    # Terraform infrastructure code
 │   ├── *.tf                   # Terraform configuration files

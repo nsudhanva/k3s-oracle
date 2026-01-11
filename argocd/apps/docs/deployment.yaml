@@ -14,10 +14,10 @@ spec:
         app: docs
     spec:
       imagePullSecrets:
-      - name: regcred
+        - name: regcred
       containers:
-      - name: docs
-        image: ghcr.io/nsudhanva/k3s-oracle/docs:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 80
+        - name: docs
+          image: ghcr.io/nsudhanva/k3s-oracle/docs:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80

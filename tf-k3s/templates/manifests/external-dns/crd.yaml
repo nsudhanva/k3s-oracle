@@ -13,41 +13,41 @@ spec:
     singular: dnsendpoint
   scope: Namespaced
   versions:
-  - name: v1alpha1
-    served: true
-    storage: true
-    schema:
-      openAPIV3Schema:
-        type: object
-        properties:
-          spec:
-            type: object
-            properties:
-              endpoints:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    dnsName:
-                      type: string
-                    targets:
-                      type: array
-                      items:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                endpoints:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      dnsName:
                         type: string
-                    recordType:
-                      type: string
-                    recordTTL:
-                      type: integer
-                    labels:
-                      type: object
-                      additionalProperties:
+                      targets:
+                        type: array
+                        items:
+                          type: string
+                      recordType:
                         type: string
-                    providerSpecific:
-                      type: array
-                      items:
+                      recordTTL:
+                        type: integer
+                      labels:
                         type: object
-                        properties:
-                          name:
-                            type: string
-                          value:
-                            type: string
+                        additionalProperties:
+                          type: string
+                      providerSpecific:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            value:
+                              type: string

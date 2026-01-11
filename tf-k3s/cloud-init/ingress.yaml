@@ -14,25 +14,25 @@ runcmd:
   - sysctl -p /etc/sysctl.d/99-nat.conf
   - iptables -P FORWARD ACCEPT
   - iptables -F FORWARD
-  
+
   # Setup NAT
   - DEFAULT_IFACE=$(ip route get 8.8.8.8 | awk '{print $5; exit}')
   - iptables -t nat -A POSTROUTING -o $DEFAULT_IFACE -j MASQUERADE
-  
+
   # Allow VXLAN traffic for Flannel
   - iptables -I INPUT -p udp --dport 8472 -j ACCEPT
-  
+
   # Allow traffic from private subnet and pod network
   - iptables -I INPUT -s 10.0.2.0/24 -j ACCEPT
   - iptables -I INPUT -s 10.42.0.0/16 -j ACCEPT
-  
+
   # Allow HTTP/HTTPS traffic
   - iptables -I INPUT -p tcp --dport 80 -j ACCEPT
   - iptables -I INPUT -p tcp --dport 443 -j ACCEPT
-  
+
   # Allow pod-to-pod traffic in FORWARD chain
   - iptables -I FORWARD -s 10.42.0.0/16 -d 10.42.0.0/16 -j ACCEPT
-  
+
   - netfilter-persistent save
 
   # Install K3s Agent

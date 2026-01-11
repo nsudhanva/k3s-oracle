@@ -103,8 +103,9 @@ If pods on the ingress node (e.g., Envoy) cannot connect to pods on other nodes:
 Symptom: Envoy returns `503 Service Unavailable` with `upstream_reset_before_response_started{remote_connection_failure}`.
 
 This occurs when:
-1. VXLAN traffic (UDP 8472) is blocked by iptables
-2. Traffic from the pod network (10.42.0.0/16) is blocked
+
+- VXLAN traffic (UDP 8472) is blocked by iptables
+- Traffic from the pod network (10.42.0.0/16) is blocked
 
 Verify connectivity:
 
@@ -162,7 +163,8 @@ Fix: Add the annotation `external-dns.alpha.kubernetes.io/target: <public-ip>` t
 If the Gateway shows `PROGRAMMED: False` with `RefNotPermitted` errors, it cannot access TLS secrets from other namespaces.
 
 Symptom: `kubectl describe gateway public-gateway` shows:
-```
+
+```text
 Certificate ref to secret argocd/argocd-tls not permitted by any ReferenceGrant
 ```
 
@@ -191,11 +193,13 @@ The Envoy Gateway config template includes these ReferenceGrants automatically.
 Kubernetes 1.28+ restricts labels in the `kubernetes.io` and `k8s.io` namespaces.
 
 Symptom: k3s-agent fails to start with error:
-```
+
+```text
 Error: failed to validate kubelet flags: unknown 'kubernetes.io' or 'k8s.io' labels specified with --node-labels: [node-role.kubernetes.io/ingress]
 ```
 
 Fix: Use custom labels without the `kubernetes.io` prefix:
+
 ```bash
 --node-label role=ingress
 --node-label role=worker
@@ -210,11 +214,13 @@ Applications may fail to sync if dependencies aren't deployed yet.
 Symptom: `one or more synchronization tasks are not valid` with message about missing CRDs.
 
 Common dependency issues:
-1. `envoy-gateway` needs `external-dns` CRD (DNSEndpoint)
-2. `docs-app` needs `cert-manager` CRD (Certificate)
-3. All apps using Helm charts need `kustomize.buildOptions: "--enable-helm"` in argocd-cm
+
+- `envoy-gateway` needs `external-dns` CRD (DNSEndpoint)
+- `docs-app` needs `cert-manager` CRD (Certificate)
+- All apps using Helm charts need `kustomize.buildOptions: "--enable-helm"` in argocd-cm
 
 Fix: Manually sync in order:
+
 ```bash
 kubectl -n argocd patch application external-dns --type=merge -p '{"operation":{"sync":{}}}'
 kubectl -n argocd patch application cert-manager --type=merge -p '{"operation":{"sync":{}}}'
@@ -227,6 +233,7 @@ kubectl -n argocd patch application docs-app --type=merge -p '{"operation":{"syn
 If applications using Kustomize with helmCharts fail with `must specify --enable-helm`:
 
 Fix: Ensure the argocd-cm ConfigMap has the correct setting:
+
 ```bash
 kubectl -n argocd patch cm argocd-cm --type=merge -p '{"data":{"kustomize.buildOptions":"--enable-helm"}}'
 kubectl -n argocd rollout restart deploy argocd-repo-server
@@ -241,6 +248,7 @@ The Envoy Gateway controller modifies the Gateway resource after ArgoCD applies 
 Symptom: `envoy-gateway` application shows OutOfSync but Healthy.
 
 Fix: Add `ignoreDifferences` to the Application spec:
+
 ```yaml
 spec:
   ignoreDifferences:
@@ -260,6 +268,7 @@ When using Envoy Gateway for TLS termination, ArgoCD may cause redirect loops be
 Symptom: `cd.k3s.sudhanva.me` returns HTTP 307 redirect loop.
 
 Fix: Configure ArgoCD to run in insecure mode (TLS handled by Gateway):
+
 ```yaml
 valuesInline:
   server:
@@ -276,6 +285,7 @@ HTTPRoutes may serve content on both HTTP and HTTPS if not bound to specific lis
 Symptom: `http://k3s.sudhanva.me` returns 200 instead of redirecting to HTTPS.
 
 Fix: Use `sectionName` to bind routes to HTTPS listeners and create separate redirect routes:
+
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -316,6 +326,7 @@ Go templates in ExternalSecret resources require specific syntax for nested expr
 Symptom: ExternalSecret shows `SecretSyncedError` with `unable to parse template`.
 
 Fix: Use `%s` format specifiers instead of escaped quotes:
+
 ```yaml
 # Wrong
 "auth": "{{ printf \"${username}:%s\" .password | b64enc }}"

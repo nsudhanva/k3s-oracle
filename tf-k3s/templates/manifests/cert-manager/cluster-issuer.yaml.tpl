@@ -9,9 +9,9 @@ spec:
     privateKeySecretRef:
       name: cloudflare-issuer-account-key
     solvers:
-    - http01:
-        gatewayHTTPRoute:
-              parentRefs:
+      - http01:
+          gatewayHTTPRoute:
+            parentRefs:
               - name: public-gateway
                 namespace: envoy-gateway-system
                 kind: Gateway

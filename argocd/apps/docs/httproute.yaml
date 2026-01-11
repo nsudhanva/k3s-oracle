@@ -4,7 +4,7 @@ metadata:
   name: docs-route
   namespace: default
   annotations:
-    external-dns.alpha.kubernetes.io/target: "157.151.183.224"
+    external-dns.alpha.kubernetes.io/target: "129.80.192.173"
 spec:
   parentRefs:
   - name: public-gateway

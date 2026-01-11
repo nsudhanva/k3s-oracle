@@ -9,9 +9,9 @@ spec:
     recordTTL: 300
     recordType: A
     targets:
-    - 157.151.183.224
+    - 129.80.192.173
   - dnsName: cd.k3s.sudhanva.me
     recordTTL: 300
     recordType: A
     targets:
-    - 157.151.183.224
+    - 129.80.192.173

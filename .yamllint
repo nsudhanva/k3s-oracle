@@ -2,12 +2,22 @@ extends: default
 
 rules:
   line-length:
-    max: 120
+    max: 150
     level: warning
   document-start: disable
   truthy: disable
   comments: disable
   comments-indentation: disable
+  commas: disable
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 0
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: -1
+  indentation:
+    spaces: 2
+    indent-sequences: whatever
 ignore: |
   .terraform/
   node_modules/
