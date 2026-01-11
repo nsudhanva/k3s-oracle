@@ -162,6 +162,8 @@ flowchart LR
 | gateway-api-crds | Gateway API CRDs |
 | cert-manager | TLS certificate automation |
 | external-dns | Cloudflare DNS management |
+| external-secrets | OCI Vault integration |
+| managed-secrets | Vault secret sync configuration |
 | envoy-gateway | Gateway API implementation |
 | argocd-self-managed | Self-managed Argo CD |
 | argocd-ingress | Argo CD UI ingress |

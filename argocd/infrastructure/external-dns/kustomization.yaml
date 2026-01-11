@@ -24,8 +24,8 @@ helmCharts:
       extraArgs:
         - --zone-id-filter=293c1768d72a5378bbdb4d59fc8e8bfc
       sources:
-        - ingress
         - crd
+        - gateway-httproute
       rbac:
         create: true
         extraRules:

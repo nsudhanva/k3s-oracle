@@ -91,6 +91,8 @@ flowchart LR
 | gateway-api-crds | Gateway API CRDs | cluster-wide |
 | cert-manager | TLS certificate automation | cert-manager |
 | external-dns | Cloudflare DNS management | external-dns |
+| external-secrets | OCI Vault secret sync | external-secrets |
+| managed-secrets | ExternalSecret CRs for Vault | external-secrets |
 | envoy-gateway | Gateway API controller | envoy-gateway-system |
 | argocd-self-managed | Self-managed Argo CD | argocd |
 | argocd-ingress | Argo CD UI ingress | argocd |
@@ -153,11 +155,13 @@ flowchart LR
     subgraph Phase2["Phase 2"]
         CM[cert-manager]
         ED[external-dns]
+        ES[external-secrets]
     end
 
     subgraph Phase3["Phase 3"]
         EG[envoy-gateway]
         Argo[argocd]
+        MS[managed-secrets]
     end
 
     subgraph Phase4["Phase 4"]
@@ -167,6 +171,8 @@ flowchart LR
 
     CRDs --> CM
     CRDs --> ED
+    CRDs --> ES
+    ES --> MS
     CM --> EG
     ED --> EG
     EG --> Ingress

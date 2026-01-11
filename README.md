@@ -126,8 +126,12 @@ domain_name          = "k3s.example.com"
 acme_email           = "admin@example.com"
 
 git_repo_url         = "https://github.com/your-user/k3s-oracle.git"
-git_pat              = "ghp_..."
 git_username         = "your-github-username"
+git_email            = "your-email@example.com"
+git_pat              = "ghp_..."
+
+k3s_token             = "your-random-secure-token"
+argocd_admin_password = "your-secure-password"
 ```
 
 ### Deploy

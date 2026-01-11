@@ -29,8 +29,10 @@ acme_email           = "admin@yourdomain.com"
 
 git_repo_url  = "https://github.com/your-username/k3s-oracle.git"
 git_username  = "your-username"
+git_email     = "your-email@example.com"
 git_pat       = "ghp_..."
 
+k3s_token             = "your-random-secure-token"
 argocd_admin_password = "your-secure-password"
 ```
 
@@ -51,7 +53,9 @@ argocd_admin_password = "your-secure-password"
 | `acme_email` | Email for Let's Encrypt notifications | Yes |
 | `git_repo_url` | HTTPS URL of your forked repository | Yes |
 | `git_username` | GitHub username | Yes |
+| `git_email` | Email for GHCR authentication | Yes |
 | `git_pat` | GitHub Personal Access Token | Yes |
+| `k3s_token` | Shared secret for K3s node authentication | Yes |
 | `argocd_admin_password` | Password for ArgoCD admin user | Yes |
 
 <Aside type="note">
