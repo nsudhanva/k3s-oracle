@@ -46,7 +46,7 @@ resource "local_file" "envoy_gateway_static_dns" {
   filename = "../argocd/infrastructure/envoy-gateway/static-dns.yaml"
   content = templatefile("${path.module}/templates/manifests/envoy-gateway/static-dns.yaml.tpl", {
     domain_name       = var.domain_name
-    ingress_public_ip = oci_core_instance.ingress.public_ip
+    ingress_public_ip = oci_network_load_balancer_network_load_balancer.k3s_nlb.ip_addresses[0].ip_address
   })
 }
 
@@ -69,7 +69,7 @@ resource "local_file" "docs_manifests" {
     domain_name       = var.domain_name
     git_username      = var.git_username
     git_repo_name     = var.git_repo_name
-    ingress_public_ip = oci_core_instance.ingress.public_ip
+    ingress_public_ip = oci_network_load_balancer_network_load_balancer.k3s_nlb.ip_addresses[0].ip_address
   })
 }
 
