@@ -7,6 +7,7 @@ spec:
   parentRefs:
   - name: public-gateway
     namespace: envoy-gateway-system
+    sectionName: https-argocd
   hostnames:
   - "cd.${domain_name}"
   rules:
@@ -17,6 +18,25 @@ spec:
     backendRefs:
     - name: argocd-server
       port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: argocd-redirect
+  namespace: argocd
+spec:
+  parentRefs:
+  - name: public-gateway
+    namespace: envoy-gateway-system
+    sectionName: http
+  hostnames:
+  - "cd.${domain_name}"
+  rules:
+  - filters:
+    - type: RequestRedirect
+      requestRedirect:
+        scheme: https
+        statusCode: 301
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
