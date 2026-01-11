@@ -161,6 +161,31 @@ Wait approximately five minutes for bootstrapping, then verify:
 ssh -J ubuntu@<ingress-ip> ubuntu@10.0.2.10 "sudo kubectl get applications -n argocd"
 ```
 
+## CI/CD
+
+GitHub Actions workflows handle linting and deployment:
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| `lint.yml` | Pull requests | Run pre-commit hooks (markdownlint, yamllint, tflint) |
+| `docker-publish.yml` | Push to main (docs/) | Build Docker image, push to GHCR, restart docs pod |
+
+### GitHub Secrets Required
+
+For automatic docs deployment, add these secrets at `Settings > Secrets > Actions`:
+
+| Secret | Value |
+|--------|-------|
+| `SSH_PRIVATE_KEY` | Contents of your SSH private key (same key used in `ssh_public_key_path`) |
+| `INGRESS_IP` | Public IP of ingress node (from `terraform output ingress_public_ip`) |
+
+### Local Development
+
+```bash
+pre-commit install          # Install git hooks
+pre-commit run --all-files  # Run all checks manually
+```
+
 ## Documentation
 
 The full documentation is available at the live cluster site: **[https://k3s.sudhanva.me](https://k3s.sudhanva.me)**.
