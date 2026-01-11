@@ -20,10 +20,14 @@ write_files:
         repo: https://argoproj.github.io/argo-helm
         targetNamespace: argocd
         createNamespace: true
-        set:
-          server.service.type: ClusterIP
-          # We don't expose Argo UI via LoadBalancer, we will use Gateway API or Port Forwarding later.
-          # Or user can add Ingress in their repo.
+        valuesContent: |-
+          server:
+            extraArgs:
+              - --insecure
+            config:
+              kustomize.buildOptions: "--enable-helm"
+            service:
+              type: ClusterIP
 
   # Root App (App of Apps)
   - path: /var/lib/rancher/k3s/server/manifests/root-app.yaml
