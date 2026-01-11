@@ -115,17 +115,56 @@ ssh ubuntu@<ingress-ip> "ping -c 2 10.42.0.26"
 
 If ping works but TCP doesn't, check iptables INPUT chain for REJECT rules.
 
+## SSH Host Key Verification Failed
+
+When recreating the cluster, new instances will have different SSH host keys, causing connection errors.
+
+Symptom: `StrictHostKeyChecking` error when running SSH or kubectl commands.
+
+```text
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+```
+
+Fix: Remove the old host keys:
+
+```bash
+ssh-keygen -R <ingress-public-ip>
+ssh-keygen -R 10.0.2.10
+```
+
+Alternative: Use strict checking disable flags for ad-hoc commands:
+
+```bash
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ubuntu@<ip>
+```
+
+## K3s Installation Hung on Cloud-Init
+
+In rare cases, temporary DNS or network issues during boot can cause the K3s installation script to fail silently.
+
+Symptom: `kubectl get nodes` shows connection refused, or `systemctl status k3s` says unit not found after 10+ minutes.
+
+Check logs:
+
+```bash
+ssh ubuntu@<ingress-ip> "tail -n 50 /var/log/cloud-init-output.log"
+```
+
+Fix: If the installation failed, manually rerun the install command found in the logs or in `tf-k3s/cloud-init/server.yaml`.
+
 ## Argo CD Helm Chart Errors
 
 When using Kustomize to inflate Helm charts, Argo CD requires explicit enablement.
 
 Error: `must specify --enable-helm`
 
-Fix: Patch `argocd-cm` ConfigMap:
+Fix: Patch `argocd-cm` ConfigMap and **restart the repo-server**:
 
-```yaml
-data:
-  kustomize.buildOptions: "--enable-helm"
+```bash
+kubectl -n argocd patch cm argocd-cm --type=merge -p '{"data":{"kustomize.buildOptions":"--enable-helm"}}'
+kubectl -n argocd rollout restart deploy argocd-repo-server
 ```
 
 ## SSH Key Format
@@ -360,7 +399,7 @@ The agent will re-download certificates from the server and rejoin the cluster.
 
 ## Let's Encrypt Rate Limiting
 
-Let's Encrypt enforces strict rate limits that can prevent certificate issuance.
+**Critical for Development/Testing:** Let's Encrypt enforces strict rate limits (5 certificates per week for the same set of domains).
 
 Symptom: Certificate shows `Failed` status with error:
 
@@ -368,32 +407,22 @@ Symptom: Certificate shows `Failed` status with error:
 429 urn:ietf:params:acme:error:rateLimited: too many certificates (5) already issued for this exact set of identifiers in the last 168h0m0s
 ```
 
-This occurs when you've issued 5+ certificates for the same domain names within 7 days (common during iterative cluster development).
+This is common during iterative cluster development where you destroy and recreate the cluster frequently.
 
-**Options:**
+**Prevention:**
 
-1. **Wait** - Rate limit resets after 7 days from the oldest issuance
-2. **Use staging** - Let's Encrypt staging server has higher limits (not browser-trusted)
-3. **Create self-signed cert** - Temporary workaround (see below)
+1.  **Use Staging Issuer (Recommended):**
+    For development, use the Let's Encrypt Staging environment which has much higher limits. The certificates won't be trusted by browsers (you'll see a warning), but it verifies the entire ACME flow works.
 
-**Use staging server:**
+    Update `cluster-issuer.yaml` (or create a separate staging issuer):
 
-```yaml
-spec:
-  acme:
-    server: https://acme-staging-v02.api.letsencrypt.org/directory
-```
+    ```yaml
+    spec:
+      acme:
+        server: https://acme-staging-v02.api.letsencrypt.org/directory
+    ```
 
-**Create self-signed certificate:**
-
-```bash
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout /tmp/tls.key -out /tmp/tls.crt \
-  -subj "/CN=k3s.example.com"
-kubectl create secret tls docs-tls \
-  --cert=/tmp/tls.crt --key=/tmp/tls.key \
-  -n default --dry-run=client -o yaml | kubectl apply -f -
-```
+2.  **Wait:** The limit resets after 7 days from the first issuance.
 
 **Prevention:**
 

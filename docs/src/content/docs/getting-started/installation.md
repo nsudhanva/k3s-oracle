@@ -162,6 +162,10 @@ dig +short k3s.yourdomain.com
 curl -I https://k3s.yourdomain.com
 ```
 
+:::caution[Rate Limiting]
+Let's Encrypt limits you to **5 certificates per week** for the same domain. If you destroy and recreate your cluster frequently, you will hit this limit and HTTPS will fail. Use the [Staging Issuer](/troubleshooting/common-issues/#lets-encrypt-rate-limiting) for development.
+:::
+
 ## Troubleshooting First Deploy
 
 ### Applications Stuck in Unknown/OutOfSync
@@ -174,7 +178,7 @@ Check if `kustomize.buildOptions` is set:
 kubectl -n argocd get cm argocd-cm -o jsonpath='{.data.kustomize\.buildOptions}'
 ```
 
-If empty, patch it:
+If empty, patch it and **restart the repo server**:
 
 ```bash
 kubectl -n argocd patch cm argocd-cm --type=merge -p '{"data":{"kustomize.buildOptions":"--enable-helm"}}'
