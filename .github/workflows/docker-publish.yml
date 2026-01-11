@@ -2,10 +2,10 @@ name: Build and Publish Docs
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths:
-      - 'docs/**'
-      - '.github/workflows/docker-publish.yml'
+      - "docs/**"
+      - ".github/workflows/docker-publish.yml"
   workflow_dispatch:
 
 env:
@@ -13,6 +13,42 @@ env:
   IMAGE_NAME: ${{ github.repository }}/docs
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0"
+
+      - name: Install TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Initialize TFLint
+        run: tflint --init
+        working-directory: tf-k3s
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files
+
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
@@ -53,3 +89,21 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
+
+  restart-docs:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - name: Restart docs deployment
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          INGRESS_IP: ${{ secrets.INGRESS_IP }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$INGRESS_IP" >> ~/.ssh/known_hosts 2>/dev/null
+
+          ssh -o StrictHostKeyChecking=no -J ubuntu@"$INGRESS_IP" ubuntu@10.0.2.10 \
+            "sudo kubectl rollout restart deployment/docs -n default && \
+             sudo kubectl rollout status deployment/docs -n default --timeout=120s"
