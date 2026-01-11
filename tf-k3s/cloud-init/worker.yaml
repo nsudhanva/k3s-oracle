@@ -5,13 +5,11 @@ packages:
   - iptables-persistent
 
 runcmd:
-  # Open Firewall
   - iptables -P INPUT ACCEPT
   - iptables -P FORWARD ACCEPT
   - iptables -F INPUT
   - iptables -F FORWARD
   - netfilter-persistent save
-
   - |
     until curl -k https://${server_ip}:6443; do
       echo "Waiting for K3s Server..."

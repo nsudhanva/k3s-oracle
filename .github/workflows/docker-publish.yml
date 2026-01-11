@@ -104,14 +104,9 @@ jobs:
           INGRESS_IP: ${{ secrets.INGRESS_IP }}
         run: |
           mkdir -p ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/key.pem
+          chmod 600 ~/.ssh/key.pem
           ssh-keyscan -H "$INGRESS_IP" >> ~/.ssh/known_hosts 2>/dev/null
-          ssh-keyscan -H "10.0.2.10" >> ~/.ssh/known_hosts 2>/dev/null
 
-          eval "$(ssh-agent -s)"
-          ssh-add ~/.ssh/id_rsa
-
-          ssh -o StrictHostKeyChecking=no -o ProxyCommand="ssh -o StrictHostKeyChecking=no -W %h:%p ubuntu@$INGRESS_IP" ubuntu@10.0.2.10 \
-            "sudo kubectl rollout restart deployment/docs -n default && \
-             sudo kubectl rollout status deployment/docs -n default --timeout=120s"
+          ssh -i ~/.ssh/key.pem -o StrictHostKeyChecking=no ubuntu@"$INGRESS_IP" \
+            "ssh -o StrictHostKeyChecking=no ubuntu@10.0.2.10 'sudo kubectl rollout restart deployment/docs -n default && sudo kubectl rollout status deployment/docs -n default --timeout=120s'"

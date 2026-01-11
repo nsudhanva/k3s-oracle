@@ -185,8 +185,8 @@ For automatic docs deployment, add these secrets at `Settings > Secrets > Action
 ### Local Development
 
 ```bash
-pre-commit install          # Install git hooks
-pre-commit run --all-files  # Run all checks manually
+pre-commit install
+pre-commit run --all-files
 ```
 
 ## Documentation
