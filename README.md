@@ -63,7 +63,6 @@ The cluster runs on three Ampere A1 ARM64 instances within OCI's Always Free lim
 | Vault Secrets | 150 secrets | ~10 secrets |
 | Vault Master Keys | 20 key versions | 1 key |
 | Flexible NLB | 1 instance | 1 instance (ingress) |
-| Load Balancer | 1 instance (10 Mbps) | Not used |
 
 ```mermaid
 flowchart LR
