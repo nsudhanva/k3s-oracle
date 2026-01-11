@@ -99,51 +99,6 @@ k3s-oracle/
 └── .github/workflows/         # CI/CD pipelines
 ```
 
-## Common Operations
-
-### Accessing the Cluster
-
-```bash
-# SSH to server via ingress jump host
-ssh -J ubuntu@<ingress-public-ip> ubuntu@10.0.2.10
-
-# Run kubectl commands
-ssh -J ubuntu@<ingress-public-ip> ubuntu@10.0.2.10 "sudo kubectl get nodes"
-
-# Start SSH tunnel for local kubectl
-ssh -N -L 16443:10.0.2.10:6443 ubuntu@<ingress-public-ip>
-```
-
-### Checking ArgoCD Status
-
-```bash
-ssh -J ubuntu@<ingress-public-ip> ubuntu@10.0.2.10 "sudo kubectl get applications -n argocd"
-```
-
-### Deploying Changes
-
-1. Modify manifests in `argocd/` or templates in `tf-k3s/templates/manifests/`
-2. If templates changed, run `terraform apply` to regenerate manifests
-3. Commit and push to Git
-4. ArgoCD syncs automatically (or manually via UI/CLI)
-
-## Infrastructure Details
-
-### Nodes
-
-| Node | IP | Resources | Role |
-|------|-----|-----------|------|
-| k3s-ingress | 10.0.1.10 (public) | 1 OCPU, 6GB | NAT + Envoy Gateway |
-| k3s-server | 10.0.2.10 (private) | 2 OCPU, 12GB | Control plane + ArgoCD |
-| k3s-worker | 10.0.2.x (private) | 1 OCPU, 6GB | Workloads |
-
-### Network
-
-- VCN CIDR: 10.0.0.0/16
-- Public subnet: 10.0.1.0/24 (ingress node)
-- Private subnet: 10.0.2.0/24 (server + worker)
-- Private nodes use ingress node as NAT gateway
-
 ## Required terraform.tfvars Variables
 
 ```hcl
@@ -175,16 +130,6 @@ acme_email            = "admin@example.com"
 k3s_token             = "random-secure-token"
 ```
 
-### Gateway TLS Certificate Errors
-
-If the Gateway can't access TLS secrets from other namespaces (RefNotPermitted error), ensure ReferenceGrants exist. These are included in the envoy-gateway config template.
-
-### ArgoCD Not Syncing
-
-1. Check ArgoCD can reach GitHub: verify repo-creds secret exists
-2. Check applications status: `kubectl get applications -n argocd`
-3. Check ArgoCD logs: `kubectl logs -n argocd -l app.kubernetes.io/name=argocd-server`
-
 ## Known Issues After Cluster Recreation
 
 ### Worker Node TLS Certificate Mismatch
@@ -202,32 +147,6 @@ ssh -J ubuntu@<ingress-ip> ubuntu@<worker-ip>
 sudo systemctl stop k3s-agent
 sudo rm -rf /var/lib/rancher/k3s/agent/*.kubeconfig /var/lib/rancher/k3s/agent/client*
 sudo systemctl start k3s-agent
-```
-
-### Let's Encrypt Rate Limiting
-
-**CRITICAL**: Let's Encrypt limits you to 5 certificates per exact domain set per 7 days. If you've rebuilt the cluster multiple times, certificates may fail with `429 rateLimited`.
-
-Workarounds:
-
-1. Wait 7 days for rate limit reset
-2. Use staging server during development (not browser-trusted)
-3. Create self-signed cert as temporary fix:
-
-```bash
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout /tmp/tls.key -out /tmp/tls.crt -subj "/CN=<domain>"
-kubectl create secret tls docs-tls --cert=/tmp/tls.crt --key=/tmp/tls.key -n default
-```
-
-### Envoy Gateway Pod Stuck Pending
-
-Envoy uses hostPort 80/443. During rollouts, new pods can't start until old pods release the ports.
-
-Fix: Delete the old pod manually:
-
-```bash
-kubectl delete pod -n envoy-gateway-system <old-pod-name> --grace-period=10
 ```
 
 ## Pre-Deployment Checklist
