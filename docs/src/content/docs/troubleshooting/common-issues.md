@@ -184,3 +184,51 @@ spec:
 ```
 
 The Envoy Gateway config template includes these ReferenceGrants automatically.
+
+## Node Label Namespace Restrictions
+
+Kubernetes 1.28+ restricts labels in the `kubernetes.io` and `k8s.io` namespaces.
+
+Symptom: k3s-agent fails to start with error:
+```
+Error: failed to validate kubelet flags: unknown 'kubernetes.io' or 'k8s.io' labels specified with --node-labels: [node-role.kubernetes.io/ingress]
+```
+
+Fix: Use custom labels without the `kubernetes.io` prefix:
+```bash
+--node-label role=ingress
+--node-label role=worker
+```
+
+The cloud-init templates use `role=ingress` and `role=worker` which are allowed.
+
+## ArgoCD Application Sync Order
+
+Applications may fail to sync if dependencies aren't deployed yet.
+
+Symptom: `one or more synchronization tasks are not valid` with message about missing CRDs.
+
+Common dependency issues:
+1. `envoy-gateway` needs `external-dns` CRD (DNSEndpoint)
+2. `docs-app` needs `cert-manager` CRD (Certificate)
+3. All apps using Helm charts need `kustomize.buildOptions: "--enable-helm"` in argocd-cm
+
+Fix: Manually sync in order:
+```bash
+kubectl -n argocd patch application external-dns --type=merge -p '{"operation":{"sync":{}}}'
+kubectl -n argocd patch application cert-manager --type=merge -p '{"operation":{"sync":{}}}'
+kubectl -n argocd patch application envoy-gateway --type=merge -p '{"operation":{"sync":{}}}'
+kubectl -n argocd patch application docs-app --type=merge -p '{"operation":{"sync":{}}}'
+```
+
+## ArgoCD Kustomize Helm Support
+
+If applications using Kustomize with helmCharts fail with `must specify --enable-helm`:
+
+Fix: Ensure the argocd-cm ConfigMap has the correct setting:
+```bash
+kubectl -n argocd patch cm argocd-cm --type=merge -p '{"data":{"kustomize.buildOptions":"--enable-helm"}}'
+kubectl -n argocd rollout restart deploy argocd-repo-server
+```
+
+The ArgoCD kustomization includes this configuration automatically via the argocd-self-managed application.

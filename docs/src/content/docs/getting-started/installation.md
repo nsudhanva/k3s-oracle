@@ -159,7 +159,47 @@ dig +short k3s.yourdomain.com
 curl -I https://k3s.yourdomain.com
 ```
 
+## Troubleshooting First Deploy
+
+### Applications Stuck in Unknown/OutOfSync
+
+If ArgoCD applications remain in Unknown status after initial deploy:
+
+1. Check if `kustomize.buildOptions` is set:
+```bash
+kubectl -n argocd get cm argocd-cm -o jsonpath='{.data.kustomize\.buildOptions}'
+```
+
+2. If empty, patch it:
+```bash
+kubectl -n argocd patch cm argocd-cm --type=merge -p '{"data":{"kustomize.buildOptions":"--enable-helm"}}'
+kubectl -n argocd rollout restart deploy argocd-repo-server
+```
+
+3. Sync applications in dependency order:
+```bash
+for app in external-dns cert-manager envoy-gateway docs-app argocd-ingress; do
+  kubectl -n argocd patch application $app --type=merge -p '{"operation":{"sync":{}}}'
+  sleep 10
+done
+```
+
+### Node Not Joining Cluster
+
+If a node fails to join with label validation errors, SSH to the node and check:
+```bash
+sudo journalctl -u k3s-agent -n 50
+```
+
+If you see `unknown 'kubernetes.io' labels`, the cloud-init used a restricted label. Fix by reinstalling:
+```bash
+sudo /usr/local/bin/k3s-agent-uninstall.sh
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC='agent --node-label role=ingress' K3S_URL=https://10.0.2.10:6443 K3S_TOKEN='<token>' sh -
+```
+
+See [Common Issues](/troubleshooting/common-issues/) for more solutions.
+
 ## Next Steps
 
 - [Set up local kubectl access](/operation/accessing-cluster/)
-- [Deploy applications](/operation/deploying-apps/)
+- [Deploy applications](/operation/adding-apps/)
