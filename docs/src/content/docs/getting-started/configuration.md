@@ -32,8 +32,9 @@ git_username  = "your-username"
 git_email     = "your-email@example.com"
 git_pat       = "ghp_..."
 
-k3s_token             = "your-random-secure-token"
-argocd_admin_password = "your-secure-password"
+k3s_token                  = "your-random-secure-token"
+argocd_admin_password      = "your-secure-password"
+argocd_admin_password_hash = "$2a$10$..."  # bcrypt hash of argocd_admin_password
 ```
 
 ## Variable Reference
@@ -57,10 +58,19 @@ argocd_admin_password = "your-secure-password"
 | `git_pat` | GitHub Personal Access Token | Yes |
 | `k3s_token` | Shared secret for K3s node authentication | Yes |
 | `argocd_admin_password` | Password for ArgoCD admin user | Yes |
+| `argocd_admin_password_hash` | Bcrypt hash of the password (for argocd-secret) | Yes |
 
 <Aside type="note">
   OCI authentication variables are not stored in Vault since they're needed to access Vault. Keep them in a password manager.
 </Aside>
+
+## ArgoCD Password Hash
+
+ArgoCD requires a bcrypt hash of the admin password for authentication. Generate it with:
+
+```bash
+htpasswd -nbBC 10 "" "your-password" | tr -d ':\n' | sed 's/^\$/\$2a\$/'
+```
 
 ## SSH Key Format
 
